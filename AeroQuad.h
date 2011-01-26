@@ -24,7 +24,7 @@
 #include "pins_arduino.h"
 
 // Flight Software Version
-#define VERSION 2.1
+#define VERSION 2.11
 
 #define BAUD 115200
 //#define BAUD 57600
@@ -227,6 +227,10 @@ byte update = 0;
 #define FASTTELEMETRYTIME 10000  // 10ms, 100Hz
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
 
+#ifdef MAVLINK
+  #define HEARTBEATLOOPTIME 1000
+#endif
+
 float G_Dt = 0.002;
 // Offset starting times so that events don't happen at the same time
 unsigned long previousTime = 0;
@@ -240,6 +244,10 @@ unsigned long autoZeroGyroTime = 0;
 unsigned long cameraTime = 10000;
 unsigned long fastTelemetryTime = 0;
 unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
+
+#ifdef MAVLINK
+  unsigned long heartbeatTime = 0;
+#endif
 
 // jihlein: wireless telemetry defines
 /**************************************************************/
@@ -280,6 +288,10 @@ byte controlLoop = ON;
 byte cameraLoop = ON; // Note: stabilization camera software is still under development, moved to Arduino Mega
 byte fastTransfer = OFF; // Used for troubleshooting
 byte testSignal = LOW;
+
+#ifdef MAVLINK
+  byte heartbeatLoop = ON;
+#endif
 
 // **************************************************************
 // *************************** EEPROM ***************************
@@ -351,6 +363,14 @@ void readSensors(void); // defined in Sensors.pde
 void flightControl(void); // defined in FlightControl.pde
 void readSerialCommand(void);  //defined in SerialCom.pde
 void sendSerialTelemetry(void); // defined in SerialCom.pde
+#ifdef MAVLINK
+  void readSerialMavLink(void);
+  void sendSerialHeartbeat(void); // defined in MavLink.pde
+  void sendSerialBoot(void);
+  void sendSerialSysStatus(void);
+  void sendSerialRawIMU(void);
+  void sendSerialAttitude(void);
+#endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde
 void comma(void); // defined in SerialCom.pde

@@ -18,18 +18,32 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-// SerialCom.pde is responsible for the serial communication for commands and telemetry from the AeroQuad
+// MavLink.pde is responsible for the serial communication for commands and telemetry from the AeroQuad
 // This comtains readSerialCommand() which listens for a serial command and it's arguments
 // This also contains readSerialTelemetry() which listens for a telemetry request and responds with the requested data
-// For more information on each command/telemetry look at: http://aeroquad.com/content.php?117
-
-// Includes re-write / fixes from Aadamson and ala42, special thanks to those guys!
-// http://aeroquad.com/showthread.php?1461-We-have-some-hidden-warnings&p=14618&viewfull=1#post14618
 
 //***************************************************************************************************
 //********************************** Serial Commands ************************************************
 //***************************************************************************************************
-#ifdef CONFIGURATOR
+#ifdef MAVLINK
+//#include <FastSerial.h>
+#include "../mavlink/include/mavlink.h"        // Mavlink interface
+const int system_type = MAV_QUADROTOR;
+const int autopilot_type = MAV_AUTOPILOT_GENERIC;
+
+int system_mode = MAV_MODE_UNINIT;
+int system_nav_mode = MAV_NAV_GROUNDED;
+int system_status = 0;
+
+long system_dropped_packets = 0;
+
+
+mavlink_message_t msg; 
+uint8_t buf[MAVLINK_MAX_PACKET_LEN];
+mavlink_status_t status;
+
+
+
 void readSerialPID(unsigned char PIDid) {
   struct PIDdata* pid = &PID[PIDid];
   pid->P = readFloatSerial();
@@ -39,8 +53,34 @@ void readSerialPID(unsigned char PIDid) {
   pid->integratedError = 0;
 }
 
+void readSerialMavLink() {
+  while(Serial.available() > 0) { 
+    uint8_t c = Serial.read();
+    //try to get a new message 
+      if(mavlink_parse_char(MAVLINK_COMM_0, c, &msg, &status)) { 
+        // Handle message
+        switch(msg.msgid) {
+          case MAVLINK_MSG_ID_SET_MODE: {
+            system_mode = mavlink_msg_set_mode_get_mode(&msg);
+          }
+          break;
+          case MAVLINK_MSG_ID_ACTION:
+            // EXECUTE ACTION
+          break;
+          default:
+            //Do nothing
+          break;
+        }
+      } 
+      // And get the next one
+    } 
+    system_dropped_packets = status.packet_rx_drop_count;
+}
+
+
 void readSerialCommand() {
   // Check for serial message
+  
   if (Serial.available()) {
     digitalWrite(LEDPIN, LOW);
     queryType = Serial.read();
@@ -217,6 +257,36 @@ void PrintPID(unsigned char IDPid)
   PrintValueComma(PID[IDPid].P);
   PrintValueComma(PID[IDPid].I);
   PrintValueComma(PID[IDPid].D);
+}
+
+void sendSerialHeartbeat() {
+  mavlink_msg_heartbeat_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_type, autopilot_type);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialRawIMU() {
+  mavlink_msg_raw_imu_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, accel.getRaw(XAXIS), accel.getRaw(YAXIS), accel.getRaw(ZAXIS), gyro.getRaw(XAXIS), gyro.getRaw(YAXIS), gyro.getRaw(ZAXIS), compass.getRawData(XAXIS), compass.getRawData(YAXIS), compass.getRawData(ZAXIS));
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialAttitude() {
+  mavlink_msg_attitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, accel.angleRad(XAXIS), accel.angleRad(YAXIS), accel.angleRad(ZAXIS), gyro.rateDegPerSec(XAXIS), gyro.rateDegPerSec(YAXIS), gyro.rateDegPerSec(ZAXIS));
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialBoot() {
+  mavlink_msg_boot_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, VERSION);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialSysStatus() {
+  mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, 0, (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
 }
 
 void sendSerialTelemetry() {

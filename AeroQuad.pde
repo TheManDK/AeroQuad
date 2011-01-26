@@ -50,6 +50,19 @@
 //#define HEXACOAXIAL
 //#define HEXARADIAL
 
+
+/****************************************************************************
+ **************** Define Communication Protocol Configuration ***************
+ ****************************************************************************/
+//#define CONFIGURATOR
+#define MAVLINK
+
+#define MAV_SYSTEM_ID 100
+#define MAV_COMPONENT_ID MAV_COMP_ID_IMU
+
+#define TARGET_LOOPTIME 500
+ 
+
 // *******************************************************************************************************************************
 // Optional Sensors
 // Warning:  If you enable HeadingHold or AltitudeHold and do not have the correct sensors connected, the flight software may hang
@@ -333,7 +346,7 @@ void setup() {
     // http://aeroquad.com/showthread.php?991-AeroQuad-Flight-Software-v2.0&p=11262&viewfull=1#post11262
     TWBR = 12;
   #endif
-
+  sendSerialBoot();
   // Read user values from EEPROM
   readEEPROM(); // defined in DataStorage.h
   
@@ -429,13 +442,14 @@ void loop () {
     readPilotCommands(); // defined in FlightCommand.pde
     receiverTime = currentTime + RECEIVERLOOPTIME;
   }
-  
+  #ifdef CONFIGURATOR
   // Listen for configuration commands and reports telemetry
   if ((telemetryLoop == ON) && (currentTime > telemetryTime)) { // 20Hz
     readSerialCommand(); // defined in SerialCom.pde
     sendSerialTelemetry(); // defined in SerialCom.pde
     telemetryTime = currentTime + TELEMETRYLOOPTIME;
   }
+  #endif
 
   #ifdef CameraControl // Experimental, not fully implemented yet
     if ((cameraLoop == ON) && (currentTime > cameraTime)) { // 50Hz
@@ -446,4 +460,16 @@ void loop () {
       cameraTime = currentTime + CAMERALOOPTIME;
     }
   #endif
+  
+  #ifdef MAVLINK
+      if ((heartbeatLoop == ON) && (currentTime > heartbeatTime)) { // 10Hz
+        readSerialMavLink();
+        sendSerialHeartbeat(); // Defined in MavLink.pde
+        sendSerialSysStatus();
+        sendSerialRawIMU();
+        sendSerialAttitude();
+      heartbeatTime = currentTime + HEARTBEATLOOPTIME;
+    }
+  #endif
+  
 }
