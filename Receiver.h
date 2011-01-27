@@ -385,6 +385,35 @@ public:
   }
 };
 
+class Receiver_MavLink : public Receiver {
+public:
+  int rawData[LASTCHANNEL];
+  void initialize() {
+    this->_initialize(); // load in calibration xmitFactor from EEPROM
+  }
+
+  void read(void) {
+    for(byte channel = ROLL; channel < LASTCHANNEL; channel++) {
+      // Apply transmitter calibration adjustment
+      receiverData[channel] = (mTransmitter[channel] * rawData[channel]) + bTransmitter[channel];
+      // Smooth the flight control transmitter inputs
+      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+    }
+
+    // Reduce transmitter commands using xmitFactor and center around 1500
+    for (byte channel = ROLL; channel < THROTTLE; channel++)
+      transmitterCommand[channel] = ((transmitterCommandSmooth[channel] - transmitterZero[channel]) * xmitFactor) + transmitterZero[channel];
+    // No xmitFactor reduction applied for throttle, mode and AUX
+    for (byte channel = THROTTLE; channel < LASTCHANNEL; channel++)
+      transmitterCommand[channel] = transmitterCommandSmooth[channel];
+  }
+  
+  int scaleToMavLink(byte channel)
+  {
+   return (int)((transmitterCommand[channel]*20)-30000); 
+  }
+};
+
 class Receiver_AeroQuadMega_Fake :
 public Receiver {
 private:

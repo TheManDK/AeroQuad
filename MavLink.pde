@@ -27,13 +27,13 @@
 //***************************************************************************************************
 #ifdef MAVLINK
 //#include <FastSerial.h>
-#include "../mavlink/include/mavlink.h"        // Mavlink interface
+#include "../mavlink/include/common/mavlink.h"        // Mavlink interface
 const int system_type = MAV_QUADROTOR;
 const int autopilot_type = MAV_AUTOPILOT_GENERIC;
 
 int system_mode = MAV_MODE_UNINIT;
 int system_nav_mode = MAV_NAV_GROUNDED;
-int system_status = 0;
+int system_status = MAV_STATE_STANDBY;
 
 long system_dropped_packets = 0;
 
@@ -64,8 +64,49 @@ void readSerialMavLink() {
             system_mode = mavlink_msg_set_mode_get_mode(&msg);
           }
           break;
-          case MAVLINK_MSG_ID_ACTION:
-            // EXECUTE ACTION
+          case MAVLINK_MSG_ID_ACTION: {
+            uint8_t result = 0;
+            
+            if (mavlink_msg_action_get_target(&msg) != MAV_SYSTEM_ID || mavlink_msg_action_get_target_component(&msg) != MAV_COMPONENT_ID) return;
+              uint8_t action = mavlink_msg_action_get_action(&msg);
+              switch(action) {
+                MAV_ACTION_MOTORS_START: {
+                  armed = ON;
+                  result = 1;
+                }
+                break;
+                MAV_ACTION_MOTORS_STOP: {
+                  armed = OFF;
+                  result = 1;
+                }
+                break;                
+              }
+             
+             mavlink_msg_action_ack_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, action, result);
+             uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+             Serial.write(buf, len);
+          }
+          break;
+          case MAVLINK_MSG_ID_MANUAL_CONTROL: {
+            if (mavlink_msg_manual_control_get_target(&msg) != MAV_SYSTEM_ID) return;
+            if (mavlink_msg_manual_control_get_roll_manual(&msg))
+            {
+              receiver.rawData[ROLL] = (int)(((mavlink_msg_manual_control_get_roll(&msg)+0.5)*1000)+1000);
+            }
+            if (mavlink_msg_manual_control_get_pitch_manual(&msg))
+            {
+              receiver.rawData[PITCH] = (int)(((mavlink_msg_manual_control_get_pitch(&msg)+0.5)*1000)+1000);
+            }
+            if (mavlink_msg_manual_control_get_yaw_manual(&msg))
+            {
+              receiver.rawData[YAW] = (int)(((mavlink_msg_manual_control_get_yaw(&msg)+0.5)*1000)+1000);
+            }
+            if (mavlink_msg_manual_control_get_thrust_manual(&msg))
+            {
+              receiver.rawData[THROTTLE] = (int)(((mavlink_msg_manual_control_get_thrust(&msg)+0.5)*1000)+1000);
+            }
+            
+          }
           break;
           default:
             //Do nothing
@@ -74,7 +115,7 @@ void readSerialMavLink() {
       } 
       // And get the next one
     } 
-    system_dropped_packets = status.packet_rx_drop_count;
+    system_dropped_packets += status.packet_rx_drop_count;
 }
 
 
@@ -277,14 +318,36 @@ void sendSerialAttitude() {
   Serial.write(buf, len);
 }
 
+void sendSerialAltitude() {
+  mavlink_msg_set_altitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(altitude.getData()*1000));
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
 void sendSerialBoot() {
   mavlink_msg_boot_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, VERSION);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
 
+void sendSerialRcRaw() {
+  mavlink_msg_rc_channels_raw_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, receiver.rawData[0], receiver.rawData[1], receiver.rawData[2], receiver.rawData[3], receiver.rawData[4], receiver.rawData[5], receiver.rawData[6], receiver.rawData[7], 64);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  
+  mavlink_msg_nsmrf_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "time", micros());
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialRcScaled() {
+  mavlink_msg_rc_channels_scaled_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, receiver.scaleToMavLink(0),receiver.scaleToMavLink(1),receiver.scaleToMavLink(2),receiver.scaleToMavLink(3),receiver.scaleToMavLink(4),receiver.scaleToMavLink(5),receiver.scaleToMavLink(6),receiver.scaleToMavLink(7), 128);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
 void sendSerialSysStatus() {
-  mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, 0, (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
+  mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, deltaTime*10, (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }

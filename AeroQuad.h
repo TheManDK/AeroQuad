@@ -24,7 +24,7 @@
 #include "pins_arduino.h"
 
 // Flight Software Version
-#define VERSION 2.11
+#define VERSION 110126
 
 #define BAUD 115200
 //#define BAUD 57600
@@ -228,7 +228,7 @@ byte update = 0;
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
 
 #ifdef MAVLINK
-  #define HEARTBEATLOOPTIME 1000
+  #define HEARTBEATLOOPTIME 10000
 #endif
 
 float G_Dt = 0.002;
@@ -370,6 +370,9 @@ void sendSerialTelemetry(void); // defined in SerialCom.pde
   void sendSerialSysStatus(void);
   void sendSerialRawIMU(void);
   void sendSerialAttitude(void);
+  void sendSerialAltitude(void);
+  void sendSerialRcRaw(void);
+  void sendSerialRcScaled(void);
 #endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde

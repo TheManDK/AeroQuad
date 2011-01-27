@@ -54,14 +54,15 @@
 /****************************************************************************
  **************** Define Communication Protocol Configuration ***************
  ****************************************************************************/
-//#define CONFIGURATOR
+
 #define MAVLINK
+#define MAVLINK_RECEIVER
 
 #define MAV_SYSTEM_ID 100
 #define MAV_COMPONENT_ID MAV_COMP_ID_IMU
 
 #define TARGET_LOOPTIME 500
- 
+
 
 // *******************************************************************************************************************************
 // Optional Sensors
@@ -168,7 +169,11 @@
 #endif
 
 #ifdef AeroQuadMega_v2
-  Receiver_AeroQuadMega receiver;
+  #ifdef MAVLINK_RECEIVER
+    Receiver_MavLink receiver;
+  #else
+    Receiver_AeroQuadMega receiver;
+  #endif
   Motors_PWMtimer motors;
   //Motors_AeroQuadI2C motors; // Use for I2C based ESC's
   Accel_AeroQuadMega_v2 accel;
@@ -346,7 +351,9 @@ void setup() {
     // http://aeroquad.com/showthread.php?991-AeroQuad-Flight-Software-v2.0&p=11262&viewfull=1#post11262
     TWBR = 12;
   #endif
-  sendSerialBoot();
+  #ifdef MAVLINK
+    sendSerialBoot();
+  #endif
   // Read user values from EEPROM
   readEEPROM(); // defined in DataStorage.h
   
@@ -468,6 +475,9 @@ void loop () {
         sendSerialSysStatus();
         sendSerialRawIMU();
         sendSerialAttitude();
+        sendSerialAltitude();
+        sendSerialRcRaw();
+        sendSerialRcScaled();
       heartbeatTime = currentTime + HEARTBEATLOOPTIME;
     }
   #endif
