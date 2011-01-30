@@ -468,18 +468,46 @@ void loop () {
     }
   #endif
   
+  
+  
   #ifdef MAVLINK
+    if ((receiveLoop == ON) && (currentTime > receiveTime)) {
+        readSerialMavLink(); // Defined in MavLink.pde
+        receiveTime = currentTime + RECEIVELOOPTIME;      
+    }
       if ((heartbeatLoop == ON) && (currentTime > heartbeatTime)) { // 10Hz
-        readSerialMavLink();
+        
         sendSerialHeartbeat(); // Defined in MavLink.pde
-        sendSerialSysStatus();
-        sendSerialRawIMU();
+        heartbeatTime = currentTime + HEARTBEATLOOPTIME;
+        /*
+        
         sendSerialAttitude();
         sendSerialAltitude();
-        sendSerialRcRaw();
+        
         sendSerialRcScaled();
-      heartbeatTime = currentTime + HEARTBEATLOOPTIME;
+        
+        */
+      
     }
+    if ((systemStatusLoop == ON) && (currentTime > systemStatusTime)) {
+        
+        sendSerialSysStatus(); // Defined in MavLink.pde
+        systemStatusTime = currentTime + SYSTEMSTATUSLOOPTIME;      
+    }
+    
+    if ((rawDataLoop == ON) && (currentTime > rawDataTime)) { 
+        sendSerialRawIMU(); // Defined in MavLink.pde
+        sendSerialRcRaw();
+        sendSerialRawPressure();
+        rawDataTime = currentTime + RAWDATALOOPTIME;      
+    }
+    
+    if ((attitudeLoop == ON) && (currentTime > attitudeTime)) {
+        
+        sendSerialAttitude(); // Defined in MavLink.pde
+        attitudeTime = currentTime + ATTITUDELOOPTIME;      
+    }
+    
   #endif
   
 }

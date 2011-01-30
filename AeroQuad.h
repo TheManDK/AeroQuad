@@ -228,7 +228,11 @@ byte update = 0;
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
 
 #ifdef MAVLINK
-  #define HEARTBEATLOOPTIME 10000
+  #define RECEIVELOOPTIME 10000 // 100Hz
+  #define HEARTBEATLOOPTIME 1000000 // 1Hz
+  #define RAWDATALOOPTIME 100000 // 10Hz
+  #define SYSTEMSTATUSLOOPTIME 100000 // 10Hz
+  #define ATTITUDELOOPTIME 100000 // 10Hz
 #endif
 
 float G_Dt = 0.002;
@@ -246,7 +250,11 @@ unsigned long fastTelemetryTime = 0;
 unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
 
 #ifdef MAVLINK
+  unsigned long receiveTime = 0;
   unsigned long heartbeatTime = 0;
+  unsigned long rawDataTime = 50000;
+  unsigned long systemStatusTime = 10000;
+  unsigned long attitudeTime = 10000;
 #endif
 
 // jihlein: wireless telemetry defines
@@ -290,7 +298,11 @@ byte fastTransfer = OFF; // Used for troubleshooting
 byte testSignal = LOW;
 
 #ifdef MAVLINK
+  byte receiveLoop = ON;
   byte heartbeatLoop = ON;
+  byte rawDataLoop = OFF;
+  byte systemStatusLoop = ON;
+  byte attitudeLoop = ON;
 #endif
 
 // **************************************************************
@@ -373,6 +385,9 @@ void sendSerialTelemetry(void); // defined in SerialCom.pde
   void sendSerialAltitude(void);
   void sendSerialRcRaw(void);
   void sendSerialRcScaled(void);
+  void sendSerialRawPressure(void);
+  void sendSerialPID(int , int8_t[], int8_t[], int8_t[], int, int);
+  void sendSerialParamValue(int8_t[], float, int, int);
 #endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde

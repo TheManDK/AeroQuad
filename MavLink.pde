@@ -62,6 +62,7 @@ void readSerialMavLink() {
         switch(msg.msgid) {
           case MAVLINK_MSG_ID_SET_MODE: {
             system_mode = mavlink_msg_set_mode_get_mode(&msg);
+            sendSerialSysStatus();
           }
           break;
           case MAVLINK_MSG_ID_ACTION: {
@@ -73,13 +74,29 @@ void readSerialMavLink() {
                 MAV_ACTION_MOTORS_START: {
                   armed = ON;
                   result = 1;
+                  system_status = MAV_STATE_ACTIVE;
+                  sendSerialSysStatus();
                 }
                 break;
                 MAV_ACTION_MOTORS_STOP: {
                   armed = OFF;
                   result = 1;
+                  system_status = MAV_STATE_STANDBY;
+                  sendSerialSysStatus();
                 }
-                break;                
+                break;
+                MAV_ACTION_CALIBRATE_GYRO: {
+                  if (system_status == MAV_STATE_STANDBY)
+                  {
+                    gyro.calibrate();
+                    result = 1;
+                  }
+                  else
+                  {
+                  result = 0;
+                  }
+                }                
+                break;                    
               }
              
              mavlink_msg_action_ack_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, action, result);
@@ -88,7 +105,7 @@ void readSerialMavLink() {
           }
           break;
           case MAVLINK_MSG_ID_MANUAL_CONTROL: {
-            if (mavlink_msg_manual_control_get_target(&msg) != MAV_SYSTEM_ID) return;
+            if (mavlink_msg_manual_control_get_target(&msg) != MAV_SYSTEM_ID || system_mode != MAV_MODE_MANUAL) return;
             if (mavlink_msg_manual_control_get_roll_manual(&msg))
             {
               receiver.rawData[ROLL] = (int)(((mavlink_msg_manual_control_get_roll(&msg)+0.5)*1000)+1000);
@@ -105,6 +122,30 @@ void readSerialMavLink() {
             {
               receiver.rawData[THROTTLE] = (int)(((mavlink_msg_manual_control_get_thrust(&msg)+0.5)*1000)+1000);
             }
+            
+          }
+          break;
+          case MAVLINK_MSG_ID_PARAM_REQUEST_LIST: {
+            int8_t roll_p[15] = "Roll_P";
+            int8_t roll_i[15] = "Roll_I";
+            int8_t roll_d[15] = "Roll_D";
+            sendSerialPID(ROLL, roll_p, roll_i, roll_d, 1, 12);
+            
+            int8_t pitch_p[15] = "Pitch_P";
+            int8_t pitch_i[15] = "Pitch_I";
+            int8_t pitch_d[15] = "Pitch_D";
+            sendSerialPID(PITCH, pitch_p, pitch_i, pitch_d, 4, 12);
+            
+            int8_t yaw_p[15] = "Yaw_P";
+            int8_t yaw_i[15] = "Yaw_I";
+            int8_t yaw_d[15] = "Yaw_D";
+            sendSerialPID(YAW, yaw_p, yaw_i, yaw_d, 7, 12);
+            
+            int8_t heading_p[15] = "Heading_P";
+            int8_t heading_i[15] = "Heading_I";
+            int8_t heading_d[15] = "Heading_D";
+            sendSerialPID(HEADING, heading_p, heading_i, heading_d, 10, 12);
+            
             
           }
           break;
@@ -304,6 +345,14 @@ void sendSerialHeartbeat() {
   mavlink_msg_heartbeat_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_type, autopilot_type);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "mode", system_mode);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "load", (int)(deltaTime/15));
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
 }
 
 void sendSerialRawIMU() {
@@ -313,13 +362,19 @@ void sendSerialRawIMU() {
 }
 
 void sendSerialAttitude() {
-  mavlink_msg_attitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, accel.angleRad(XAXIS), accel.angleRad(YAXIS), accel.angleRad(ZAXIS), gyro.rateDegPerSec(XAXIS), gyro.rateDegPerSec(YAXIS), gyro.rateDegPerSec(ZAXIS));
+  mavlink_msg_attitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, flightAngle.getData(ROLL) * 3.14159 / 180, flightAngle.getData(PITCH) * 3.14159 / 180, flightAngle.getData(YAW) * 3.14159 / 180, gyro.rateDegPerSec(XAXIS), gyro.rateDegPerSec(YAXIS), gyro.rateDegPerSec(ZAXIS));
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
 
 void sendSerialAltitude() {
-  mavlink_msg_set_altitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(altitude.getData()*1000));
+  mavlink_msg_set_altitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(1234));
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialRawPressure() {
+  mavlink_msg_raw_pressure_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(1000*altitude.getRawData()), 0,0,0);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
@@ -334,9 +389,23 @@ void sendSerialRcRaw() {
   mavlink_msg_rc_channels_raw_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, receiver.rawData[0], receiver.rawData[1], receiver.rawData[2], receiver.rawData[3], receiver.rawData[4], receiver.rawData[5], receiver.rawData[6], receiver.rawData[7], 64);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
-  
-  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "time", micros());
+}
+
+void sendSerialPID(int IDPid, int8_t id_p[], int8_t id_i[], int8_t id_d[],int index, int listsize) {
+  mavlink_msg_param_value_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, id_p, PID[IDPid].P, index,listsize);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  mavlink_msg_param_value_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, id_i, PID[IDPid].I, index+1,listsize);
   len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  mavlink_msg_param_value_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, id_d, PID[IDPid].D, index+2,listsize);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+}
+
+void sendSerialParamValue(int8_t id[], float value, int index, int listsize) {
+  mavlink_msg_param_value_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, id, value, index,listsize);
+  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
 
@@ -347,7 +416,7 @@ void sendSerialRcScaled() {
 }
 
 void sendSerialSysStatus() {
-  mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, deltaTime*10, (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
+  mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, (int)(deltaTime/15), (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
@@ -356,22 +425,10 @@ void sendSerialTelemetry() {
   update = 0;
   switch (queryType) {
   case '=': // Reserved debug command to view any variable from Serial Monitor
-    //printFreeMemory();
-    //Serial.print(gyro.getHeading());
-    //comma();
-    //Serial.print(batteryMonitor, 2);
-    //Serial.println();
-    //queryType = 'X';
-    break;
-  case 'B': // Send roll and pitch gyro PID values
-    PrintPID(ROLL);
-    PrintPID(PITCH);
     Serial.println(minAcro);
     queryType = 'X';
     break;
   case 'D': // Send yaw PID values
-    PrintPID(YAW);
-    PrintPID(HEADING);
     Serial.println(headingHoldConfig, BIN);
     queryType = 'X';
     break;
@@ -462,17 +519,7 @@ void sendSerialTelemetry() {
     #endif
     Serial.println();
     break;
-  case 'R': // Raw magnetometer data
-#if defined(HeadingMagHold) && defined(AeroQuad_v2)
-    PrintValueComma(compass.getRawData(XAXIS));
-    PrintValueComma(compass.getRawData(YAXIS));
-    Serial.println(compass.getRawData(ZAXIS));
-#else
-    PrintValueComma(0);
-    PrintValueComma(0);
-    Serial.println('0');
-#endif
-    break;
+
   case 'S': // Send all flight data
     PrintValueComma(deltaTime);
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
