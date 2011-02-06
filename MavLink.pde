@@ -33,7 +33,7 @@ const int autopilot_type = MAV_AUTOPILOT_GENERIC;
 
 int system_mode = MAV_MODE_UNINIT;
 int system_nav_mode = MAV_NAV_GROUNDED;
-int system_status = MAV_STATE_STANDBY;
+int system_status = MAV_STATE_ACTIVE;
 
 long system_dropped_packets = 0;
 
@@ -129,24 +129,42 @@ void readSerialMavLink() {
             int8_t roll_p[15] = "Roll_P";
             int8_t roll_i[15] = "Roll_I";
             int8_t roll_d[15] = "Roll_D";
-            sendSerialPID(ROLL, roll_p, roll_i, roll_d, 1, 12);
+            sendSerialPID(ROLL, roll_p, roll_i, roll_d, 1, 24);
             
             int8_t pitch_p[15] = "Pitch_P";
             int8_t pitch_i[15] = "Pitch_I";
             int8_t pitch_d[15] = "Pitch_D";
-            sendSerialPID(PITCH, pitch_p, pitch_i, pitch_d, 4, 12);
+            sendSerialPID(PITCH, pitch_p, pitch_i, pitch_d, 4, 24);
             
             int8_t yaw_p[15] = "Yaw_P";
             int8_t yaw_i[15] = "Yaw_I";
             int8_t yaw_d[15] = "Yaw_D";
-            sendSerialPID(YAW, yaw_p, yaw_i, yaw_d, 7, 12);
+            sendSerialPID(YAW, yaw_p, yaw_i, yaw_d, 7, 24);
             
             int8_t heading_p[15] = "Heading_P";
             int8_t heading_i[15] = "Heading_I";
             int8_t heading_d[15] = "Heading_D";
-            sendSerialPID(HEADING, heading_p, heading_i, heading_d, 10, 12);
+            sendSerialPID(HEADING, heading_p, heading_i, heading_d, 10, 24);
             
+            int8_t levelroll_p[15] = "Level Roll_P";
+            int8_t levelroll_i[15] = "Level Roll_I";
+            int8_t levelroll_d[15] = "Level Roll_D";
+            sendSerialPID(LEVELROLL, levelroll_p, levelroll_i, levelroll_d, 13, 24);
+                        
+            int8_t levelpitch_p[15] = "Level Pitch_P";
+            int8_t levelpitch_i[15] = "Level Pitch_I";
+            int8_t levelpitch_d[15] = "Level Pitch_D";
+            sendSerialPID(LEVELPITCH, levelpitch_p, levelpitch_i, levelpitch_d, 16, 24);
             
+            int8_t levelgyroroll_p[15] = "Lvl gyro rol_P";
+            int8_t levelgyroroll_i[15] = "Lvl gyro rol_I";
+            int8_t levelgyroroll_d[15] = "Lvl gyro rol_D";
+            sendSerialPID(LEVELGYROROLL, levelgyroroll_p, levelgyroroll_i, levelgyroroll_d, 19, 24);
+            
+            int8_t levelgyropitch_p[15] = "Lvl gyro pit_P";
+            int8_t levelgyropitch_i[15] = "Lvl gyro pit_I";
+            int8_t levelgyropitch_d[15] = "Lvl gyro pit_D";
+            sendSerialPID(LEVELGYROPITCH, levelgyropitch_p, levelgyropitch_i, levelgyropitch_d, 22, 24);
           }
           break;
           default:
@@ -345,14 +363,6 @@ void sendSerialHeartbeat() {
   mavlink_msg_heartbeat_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_type, autopilot_type);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
-  
-  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "mode", system_mode);
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
-  
-  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "load", (int)(deltaTime/15));
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  Serial.write(buf, len);
 }
 
 void sendSerialRawIMU() {
@@ -419,6 +429,22 @@ void sendSerialSysStatus() {
   mavlink_msg_sys_status_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, system_mode, system_nav_mode, system_status, (int)(deltaTime/15), (int)(batteryMonitor.getData()*1000), 0, system_dropped_packets);
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "mode", system_mode);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "nav_mode", system_nav_mode);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "status", system_status);
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
+  
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "load", (int)(deltaTime/15));
+  len = mavlink_msg_to_send_buffer(buf, &msg);
+  Serial.write(buf, len);
 }
 
 void sendSerialTelemetry() {
@@ -433,10 +459,7 @@ void sendSerialTelemetry() {
     queryType = 'X';
     break;
   case 'F': // Send roll and pitch auto level PID values
-    PrintPID(LEVELROLL);
-    PrintPID(LEVELPITCH);
-    PrintPID(LEVELGYROROLL);
-    PrintPID(LEVELGYROPITCH);
+    
     Serial.println(windupGuard);
     queryType = 'X';
     break;
