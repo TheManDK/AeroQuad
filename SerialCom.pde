@@ -83,7 +83,7 @@ void readSerialCommand() {
       gyro.setSmoothFactor(readFloatSerial());
       accel.setSmoothFactor(readFloatSerial());
       timeConstant = readFloatSerial();
-      flightAngle.initialize();
+      _flightAngle->initialize();
       break;
     case 'M': // Receive transmitter smoothing values
       receiver.setXmitFactor(readFloatSerial());
@@ -222,10 +222,10 @@ void sendSerialTelemetry() {
   switch (queryType) {
   case '=': // Reserved debug command to view any variable from Serial Monitor
     //printFreeMemory();
-    //Serial.print(gyro.getHeading());
-    //comma();
-    //Serial.print(batteryMonitor.getData(), 2);
-    //Serial.println();
+    Serial.print(receiver.getAngle(ROLL));
+    comma();
+    Serial.print(receiver.getAngle(PITCH));
+    Serial.println();
     //queryType = 'X';
     break;
   case 'B': // Send roll and pitch gyro PID values
@@ -267,7 +267,7 @@ void sendSerialTelemetry() {
     Serial.println(PID[ZDAMPENING].D);
 #else
     for(byte i=0; i<9; i++) {
-      PrintValueComma(0);
+     PrintValueComma(0);
     }
     Serial.println('0');
 #endif
@@ -308,8 +308,8 @@ void sendSerialTelemetry() {
     for (byte axis = ROLL; axis < YAW; axis++) {
       PrintValueComma(levelAdjust[axis]);
     }
-    PrintValueComma(flightAngle.getData(ROLL));
-    PrintValueComma(flightAngle.getData(PITCH));
+    PrintValueComma(_flightAngle->getData(ROLL));
+    PrintValueComma(_flightAngle->getData(PITCH));
     #ifdef HeadingMagHold
       PrintValueComma(compass.getAbsoluteHeading());
     #else

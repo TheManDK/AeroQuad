@@ -257,7 +257,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * lastGoodWidth) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500
@@ -373,7 +373,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * lastGoodWidth) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500
@@ -449,7 +449,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * data[channel]) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
       //transmitterCommandSmooth[channel] = transmitterFilter[channel].filter(receiverData[channel]);
       previousTime = currentTime;
     }
@@ -550,7 +550,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * ((PWM_RAW[receiverPin[channel]]+600)/2)) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
       previousTime = currentTime;
     }
 
@@ -632,7 +632,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * data[channel]) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
       previousTime = currentTime;
     }
 
