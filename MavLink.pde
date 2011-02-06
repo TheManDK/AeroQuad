@@ -372,7 +372,7 @@ void sendSerialRawIMU() {
 }
 
 void sendSerialAttitude() {
-  mavlink_msg_attitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, flightAngle.getData(ROLL) * 3.14159 / 180, flightAngle.getData(PITCH) * 3.14159 / 180, flightAngle.getData(YAW) * 3.14159 / 180, gyro.rateDegPerSec(XAXIS), gyro.rateDegPerSec(YAXIS), gyro.rateDegPerSec(ZAXIS));
+  mavlink_msg_attitude_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, _flightAngle->getData(ROLL) * 3.14159 / 180, _flightAngle->getData(PITCH) * 3.14159 / 180, _flightAngle->getData(YAW) * 3.14159 / 180, gyro.rateDegPerSec(XAXIS), gyro.rateDegPerSec(YAXIS), gyro.rateDegPerSec(ZAXIS));
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
@@ -523,8 +523,8 @@ void sendSerialTelemetry() {
     for (byte axis = ROLL; axis < YAW; axis++) {
       PrintValueComma(levelAdjust[axis]);
     }
-    PrintValueComma(flightAngle.getData(ROLL));
-    PrintValueComma(flightAngle.getData(PITCH));
+    PrintValueComma(_flightAngle->getData(ROLL));
+    PrintValueComma(_flightAngle->getData(PITCH));
     #if defined(HeadingMagHold) || defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
       PrintValueComma(compass.getAbsoluteHeading());
     #else

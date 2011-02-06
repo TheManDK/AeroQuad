@@ -397,7 +397,7 @@ public:
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * rawData[channel]) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
-      transmitterCommandSmooth[channel] = smooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
+      transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500

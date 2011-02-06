@@ -373,7 +373,7 @@ public:
 
     // store accel value that represents 1g
 //    accelOneG = accelZero[ZAXIS];
-    mesure();
+    measure();
     accelOneG = getRaw(ZAXIS);
     // replace with estimated Z axis 0g value
     accelZero[ZAXIS] = (accelZero[ROLL] + accelZero[PITCH]) / 2;
