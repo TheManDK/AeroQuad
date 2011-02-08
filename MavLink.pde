@@ -335,7 +335,7 @@ void sendSerialRcRaw() {
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
   
-  mavlink_msg_nsmrf_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "time", micros());
+  mavlink_msg_named_value_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, "time", micros());
   uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
   Serial.write(buf, len);
 }
