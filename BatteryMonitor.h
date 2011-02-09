@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.1 - January 2011
+  AeroQuad v2.2 - Feburary 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -183,7 +183,7 @@ private:
     #define BUZZERPIN 49
   #endif
   long previousTime;
-  byte state;
+  byte state, firstAlarm;
   float diode; // raw voltage goes through diode on Arduino
   float batteryScaleFactor;
 
@@ -201,6 +201,7 @@ public:
     digitalWrite(BUZZERPIN, LOW);
     previousTime = millis();
     state = LOW;
+    firstAlarm = OFF;
   }
 
   void lowBatteryEvent(byte level) {
@@ -208,7 +209,6 @@ public:
     if (level == OK) {
       digitalWrite(BUZZERPIN, LOW);
       autoDescent = 0;
-      //holdAltitude = 0;
     }
     if (level == WARNING) {
       if ((autoDescent == 0) && (currentTime > 1000)) {
@@ -227,7 +227,8 @@ public:
       }
     }
     if (level == ALARM) {
-      if (digitalRead(BUZZERPIN) == LOW) autoDescent = 0; // intialize autoDescent to zero if first time in ALARM state
+      if (firstAlarm == OFF) autoDescent = 0; // intialize autoDescent to zero if first time in ALARM state
+      firstAlarm = ON;
       digitalWrite(BUZZERPIN, HIGH); // enable buzzer
       if ((currentTime > 500) && (throttle > 1400)) {
         autoDescent -= 1; // auto descend quad
