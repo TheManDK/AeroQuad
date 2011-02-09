@@ -38,7 +38,6 @@
 //#define AeroQuadMega_v2     // Arduino Mega with AeroQuad Shield v2.x
 //#define AeroQuadMega_Wii    // Arduino Mega with Wii Sensors and AeroQuad Shield v2.x
 //#define ArduCopter          // ArduPilot Mega (APM) with APM Sensor Board
-//#define ArduCopter          // ArduPilot Mega (APM) with APM Sensor Board
 //#define Multipilot          // Multipilot board with Lys344 and ADXL 610 Gyro (needs debug)
 //#define MultipilotI2C       // Active Multipilot I2C and Mixertable (needs debug)
 //#define AeroQuadMega_CHR6DM // Clean Arduino Mega with CHR6DM as IMU/heading ref.
@@ -77,6 +76,8 @@
 #define BattMonitor //define your personal specs in BatteryMonitor.h! Full documentation with schematic there
 
 //#define WirelessTelemetry  // Enables Wireless telemetry on Serial3  // Wireless telemetry enable
+
+
 
 // *******************************************************************************************************************************
 // Camera Stabilization
