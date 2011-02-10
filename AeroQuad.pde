@@ -77,13 +77,15 @@
 #define BattMonitor //define your personal specs in BatteryMonitor.h! Full documentation with schematic there
 //#define WirelessTelemetry  // Enables Wireless telemetry on Serial3  // jihlein: Wireless telemetry enable
 
+
+
 // *******************************************************************************************************************************
 // Camera Stabilization
 // Servo output goes to D11(pitch), D12(roll), D13(yaw) on AeroQuad v1.8 shield
 // If using v2.0 Shield place jumper between:
 // D12 to D33 for roll, connect servo to SERVO1
 // D11 to D34 for pitch, connect servo to SERVO2
-// D13 to D35 for yaw, connectr servo to SERVO3
+// D13 to D35 for yaw, connect servo to SERVO3
 // Please note that you will need to have battery connected to power on servos with v2.0 shield
 // *******************************************************************************************************************************
 //#define CameraControl
@@ -216,6 +218,10 @@
   #include "FlightAngle.h"
   FlightAngle_DCM tempFlightAngle;
   FlightAngle *_flightAngle = &tempFlightAngle;
+  #ifdef HeadingMagHold
+    #include "Compass.h"
+    Compass_AeroQuad_v2 compass;
+  #endif
   #ifdef AltitudeHold
     #include "Altitude.h"
     Altitude_AeroQuad_v2 altitude;
@@ -491,9 +497,9 @@ void loop () {
 
   #ifdef CameraControl // Experimental, not fully implemented yet
     if ((cameraLoop == ON) && (currentTime > cameraTime)) { // 50Hz
-      camera.setPitch(flightAngle.getData(PITCH));
-      camera.setRoll(flightAngle.getData(ROLL));
-      camera.setYaw(flightAngle.getData(YAW));
+      camera.setPitch(_flightAngle->getData(PITCH));
+      camera.setRoll(_flightAngle->getData(ROLL));
+      camera.setYaw(_flightAngle->getData(YAW));
       camera.move();
       cameraTime = currentTime + CAMERALOOPTIME;
     }
