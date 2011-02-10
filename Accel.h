@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.1 - January 2011
+  AeroQuad v2.2 - Feburary 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -121,14 +121,19 @@ public:
   }
   
   const int getZaxis() {
-    currentAccelTime = micros();
-    zAxis = smoothWithTime(getFlightData(ZAXIS), zAxis, 0.25, ((currentTime - previousTime) / 5000.0)); //expect 5ms = 5000Ã‚Âµs = (current-previous) / 5000.0 to get around 1
-    previousAccelTime = currentAccelTime;
-    return zAxis;
+    //currentAccelTime = micros();
+    //zAxis = filterSmoothWithTime(getFlightData(ZAXIS), zAxis, 0.25, ((currentTime - previousTime) / 5000.0)); //expect 5ms = 5000Ã‚Âµs = (current-previous) / 5000.0 to get around 1
+    //previousAccelTime = currentAccelTime;
+    //return zAxis;
+    return accelOneG - getData(ZAXIS);
   }
   
   const float getAltitude(void) {
     return rawAltitude;
+  }
+  
+  const float rateG(const byte axis) {
+    return getData(axis) / accelOneG;
   }
 };
 
@@ -163,7 +168,7 @@ public:
     currentTime = micros();
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
       accelADC[axis] = analogRead(accelChannel[axis]) - accelZero[axis];
-      accelData[axis] = smooth(accelADC[axis], accelData[axis], smoothFactor);
+      accelData[axis] = filterSmooth(accelADC[axis], accelData[axis], smoothFactor);
     }
     previousTime = currentTime;
   }
@@ -254,8 +259,8 @@ public:
     // 16.0g = 1.98 mg/LSB
     sendByteI2C(accelAddress, 0x35); // register offset_lsb1 (bits 1-3)
     data = readByteI2C(accelAddress);
-    data &= 0xF1;
-    updateRegisterI2C(accelAddress, 0x35, data); // set range to +/-1.0g (value = xxxx000x)
+    data &= 0xF1; // +/-1.0g (value = xxxx000x) // 0xF7;(3g)  //0xF5; (2g)
+    updateRegisterI2C(accelAddress, 0x35, data);
   }
   
   void measure(void) {
@@ -270,7 +275,7 @@ public:
     rawData[ZAXIS] = (Wire.receive()| (Wire.receive() << 8)) >> 2; // last 2 bits are not part of measurement
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
       accelADC[axis] = rawData[axis] - accelZero[axis]; // center accel data around zero
-      accelData[axis] = smooth(accelADC[axis], accelData[axis], smoothFactor);
+      accelData[axis] = filterSmooth(accelADC[axis], accelData[axis], smoothFactor);
     }
   }
 
@@ -365,11 +370,14 @@ public:
       accelZero[calAxis] = findMode(findZero, FINDZERO);
     }
 
+
     // store accel value that represents 1g
-    accelOneG = accelZero[ZAXIS];
+//    accelOneG = accelZero[ZAXIS];
+    measure();
+    accelOneG = getRaw(ZAXIS);
     // replace with estimated Z axis 0g value
     accelZero[ZAXIS] = (accelZero[ROLL] + accelZero[PITCH]) / 2;
-    
+   
     writeFloat(accelOneG, ACCEL1G_ADR);
     writeFloat(accelZero[ROLL], LEVELROLLCAL_ADR);
     writeFloat(accelZero[PITCH], LEVELPITCHCAL_ADR);
@@ -409,7 +417,7 @@ public:
     // We just update the appropriate variables here
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
       accelADC[axis] = accelZero[axis] - NWMP_acc[axis];
-      accelData[axis] = smoothWithTime(accelADC[axis], accelData[axis], smoothFactor, ((currentTime - previousTime) / 5000.0));
+      accelData[axis] = filterSmoothWithTime(accelADC[axis], accelData[axis], smoothFactor, ((currentTime - previousTime) / 5000.0));
     }
     previousTime = currentTime;
   }
@@ -431,7 +439,7 @@ public:
     }
     
     // store accel value that represents 1g
-    accelOneG = accelZero[ZAXIS];
+    accelOneG = getRaw(ZAXIS);
     // replace with estimated Z axis 0g value
     accelZero[ZAXIS] = (accelZero[ROLL] + accelZero[PITCH]) / 2;
     
@@ -643,7 +651,7 @@ public:
     currentTime = micros();
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
       accelADC[axis] = analogRead(accelChannel[axis]) - accelZero[axis];
-      accelData[axis] = smoothWithTime(accelADC[axis], accelData[axis], smoothFactor, ((currentTime - previousTime) / 5000.0));
+      accelData[axis] = filterSmoothWithTime(accelADC[axis], accelData[axis], smoothFactor, ((currentTime - previousTime) / 5000.0));
     }
     previousTime = currentTime;
   }

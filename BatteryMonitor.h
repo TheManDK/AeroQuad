@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.1 - January 2011
+  AeroQuad v2.2 - Feburary 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -35,10 +35,9 @@ public:
   float batteryVoltage;
 
   BatteryMonitor(void) {
-
     lowVoltageWarning = 10.2; //10.8;
     lowVoltageAlarm = 9.5; //10.2;
-    batteryVoltage = lowVoltageWarning+2;
+    batteryVoltage = lowVoltageWarning + 2;
     batteryStatus = OK;
   }
 
@@ -47,7 +46,7 @@ public:
   virtual void lowBatteryEvent(byte);
 
   void measure(byte armed) {
-    batteryVoltage = smooth(readBatteryVoltage(BATTERYPIN), batteryVoltage, 0.1);
+    batteryVoltage = filterSmooth(readBatteryVoltage(BATTERYPIN), batteryVoltage, 0.1);
     if (armed == ON) {
       if (batteryVoltage < lowVoltageWarning) batteryStatus = WARNING;
       if (batteryVoltage < lowVoltageAlarm) batteryStatus = ALARM;
@@ -178,7 +177,11 @@ public:
 // *******************************************************************************
 class BatteryMonitor_AeroQuad : public BatteryMonitor {
 private:
-  #define BUZZERPIN 49
+  #if defined (__AVR_ATmega328P__)
+    #define BUZZERPIN 12
+  #else
+    #define BUZZERPIN 49
+  #endif
   long previousTime;
   byte state;
   float diode; // raw voltage goes through diode on Arduino
@@ -205,7 +208,7 @@ public:
     if (level == OK) {
       digitalWrite(BUZZERPIN, LOW);
       autoDescent = 0;
-      holdAltitude = 0;
+      //holdAltitude = 0;
     }
     if (level == WARNING) {
       if ((autoDescent == 0) && (currentTime > 1000)) {

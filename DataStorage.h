@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.1 - January 2011
+  AeroQuad v2.2 - Feburary 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -71,27 +71,27 @@ void initializeEEPROM(void) {
   PID[YAW].P = 3.0;
   PID[YAW].I = 0.05;
   PID[YAW].D = 0.0;
-  PID[LEVELROLL].P = 7.0;
-  PID[LEVELROLL].I = 1.0;
+  PID[LEVELROLL].P = 4.0;
+  PID[LEVELROLL].I = 0.15;
   PID[LEVELROLL].D = 0.0;
-  PID[LEVELPITCH].P = 7.0;
-  PID[LEVELPITCH].I = 1.0;
+  PID[LEVELPITCH].P = 4.0;
+  PID[LEVELPITCH].I = 0.15;
   PID[LEVELPITCH].D = 0.0;
   PID[HEADING].P = 3.0;
   PID[HEADING].I = 0.1;
   PID[HEADING].D = 0.0;
   PID[LEVELGYROROLL].P = 1.2;
   PID[LEVELGYROROLL].I = 0.0;
-  PID[LEVELGYROROLL].D = -0.05;
+  PID[LEVELGYROROLL].D = 0,0;
   PID[LEVELGYROPITCH].P = 1.2;
   PID[LEVELGYROPITCH].I = 0.0;
-  PID[LEVELGYROPITCH].D = -0.05;
+  PID[LEVELGYROPITCH].D = 0.0;
   #ifdef AltitudeHold
     PID[ALTITUDE].P = 25.0;
     PID[ALTITUDE].I = 0.1;
     PID[ALTITUDE].D = 0.0;
     PID[ALTITUDE].windupGuard = 25.0; //this prevents the 0.1 I term to rise too far
-    PID[ZDAMPENING].P = 0.0;
+    PID[ZDAMPENING].P = 0.5;
     PID[ZDAMPENING].I = 0.0;
     PID[ZDAMPENING].D = 0.0;
     minThrottleAdjust = -50.0;
@@ -155,10 +155,10 @@ void readEEPROM(void) {
     // Previously had issue where EEPROM was not reading right data
     readPID(ALTITUDE, ALTITUDE_PGAIN_ADR);
     PID[ALTITUDE].windupGuard = readFloat(ALTITUDE_WINDUP_ADR);
-    readPID(ZDAMPENING, ZDAMP_PGAIN_ADR);
     minThrottleAdjust = readFloat(ALTITUDE_MIN_THROTTLE_ADR);
     maxThrottleAdjust = readFloat(ALTITUDE_MAX_THROTTLE_ADR);
     altitude.setSmoothFactor(readFloat(ALTITUDE_SMOOTH_ADR));
+    readPID(ZDAMPENING, ZDAMP_PGAIN_ADR);
   #endif
 
   #ifdef HeadingMagHold
@@ -207,10 +207,10 @@ void writeEEPROM(void){
   #ifdef AltitudeHold
     writePID(ALTITUDE, ALTITUDE_PGAIN_ADR);
     writeFloat(PID[ALTITUDE].windupGuard, ALTITUDE_WINDUP_ADR);
-    writePID(ZDAMPENING, ZDAMP_PGAIN_ADR);
     writeFloat(minThrottleAdjust, ALTITUDE_MIN_THROTTLE_ADR);
     writeFloat(maxThrottleAdjust, ALTITUDE_MAX_THROTTLE_ADR);
     writeFloat(altitude.getSmoothFactor(), ALTITUDE_SMOOTH_ADR);
+    writePID(ZDAMPENING, ZDAMP_PGAIN_ADR);
   #endif
   #ifdef HeadingMagHold
     writeFloat(compass.getMagMax(XAXIS), MAGXMAX_ADR);

@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.1 - January 2011
+  AeroQuad v2.2 - Feburary 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -27,6 +27,7 @@
 #define VERSION 110126
 
 #define BAUD 115200
+//#define BAUD 111111
 //#define BAUD 57600
 #define LEDPIN 13
 #define ON 1
@@ -228,7 +229,11 @@ byte update = 0;
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
 
 #ifdef MAVLINK
-  #define HEARTBEATLOOPTIME 10000
+  #define RECEIVELOOPTIME 10000 // 100Hz
+  #define HEARTBEATLOOPTIME 1000000 // 1Hz
+  #define RAWDATALOOPTIME 100000 // 10Hz
+  #define SYSTEMSTATUSLOOPTIME 100000 // 10Hz
+  #define ATTITUDELOOPTIME 100000 // 10Hz
 #endif
 
 float G_Dt = 0.002;
@@ -246,7 +251,11 @@ unsigned long fastTelemetryTime = 0;
 unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
 
 #ifdef MAVLINK
+  unsigned long receiveTime = 0;
   unsigned long heartbeatTime = 0;
+  unsigned long rawDataTime = 50000;
+  unsigned long systemStatusTime = 10000;
+  unsigned long attitudeTime = 10000;
 #endif
 
 // jihlein: wireless telemetry defines
@@ -290,7 +299,11 @@ byte fastTransfer = OFF; // Used for troubleshooting
 byte testSignal = LOW;
 
 #ifdef MAVLINK
+  byte receiveLoop = ON;
   byte heartbeatLoop = ON;
+  byte rawDataLoop = OFF;
+  byte systemStatusLoop = ON;
+  byte attitudeLoop = ON;
 #endif
 
 // **************************************************************
@@ -360,7 +373,11 @@ void writeFloat(float value, int address); // defined in DataStorage.h
 void readEEPROM(void); // defined in DataStorage.h
 void readPilotCommands(void); // defined in FlightCommand.pde
 void readSensors(void); // defined in Sensors.pde
-void flightControl(void); // defined in FlightControl.pde
+//void calibrateESC(void); // defined in FlightControl.pde
+void processFlightControlXMode(void); // defined in FlightControl.pde
+void processFlightControlPlusMode(void); // defined in FlightControl.pde
+void processArdupirateSuperStableMode(void);  // defined in FlightControl.pde
+void processAeroQuadStableMode(void);  // defined in FlightControl.pde
 void readSerialCommand(void);  //defined in SerialCom.pde
 void sendSerialTelemetry(void); // defined in SerialCom.pde
 #ifdef MAVLINK
@@ -373,6 +390,9 @@ void sendSerialTelemetry(void); // defined in SerialCom.pde
   void sendSerialAltitude(void);
   void sendSerialRcRaw(void);
   void sendSerialRcScaled(void);
+  void sendSerialRawPressure(void);
+  void sendSerialPID(int , int8_t[], int8_t[], int8_t[], int, int);
+  void sendSerialParamValue(int8_t[], float, int, int);
 #endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde
@@ -395,3 +415,4 @@ int freemem(){
         free_memory = ((int)&free_memory) - ((int)__brkval);
     return free_memory;
 }
+
