@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.2 - Feburary 2011
+  AeroQuad v2.3 - March 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -29,7 +29,6 @@
 //***************************************************************************************************
 //********************************** Serial Commands ************************************************
 //***************************************************************************************************
-#ifdef CONFIGURATOR
 void readSerialPID(unsigned char PIDid) {
   struct PIDdata* pid = &PID[PIDid];
   pid->P = readFloatSerial();
@@ -83,7 +82,6 @@ void readSerialCommand() {
       gyro.setSmoothFactor(readFloatSerial());
       accel.setSmoothFactor(readFloatSerial());
       timeConstant = readFloatSerial();
-      _flightAngle->initialize();
       break;
     case 'M': // Receive transmitter smoothing values
       receiver.setXmitFactor(readFloatSerial());
@@ -137,8 +135,11 @@ void readSerialCommand() {
       for (byte motor = FRONT; motor < LASTMOTOR; motor++)
         motors.setRemoteCommand(motor, readFloatSerial());
       break;
-    case 'a':
-      // spare
+    case 'a': // fast telemetry transfer
+      if (readFloatSerial() == 1.0)
+        fastTransfer = ON;
+      else
+        fastTransfer = OFF;
       break;
     case 'b': // calibrate gyros
       gyro.calibrate();
@@ -146,7 +147,7 @@ void readSerialCommand() {
     case 'c': // calibrate accels
       accel.calibrate();
 #if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
-      _flightAngle->calibrate();
+      flightAngle->calibrate();
       accel.setOneG(accel.getFlightData(ZAXIS));
 #endif
       break;
@@ -186,20 +187,22 @@ void readSerialCommand() {
 //********************************* Serial Telemetry ************************************************
 //***************************************************************************************************
 
-void PrintValueComma(float val)
-{
+void PrintValueComma(float val) {
   Serial.print(val);
   comma();
 }
 
-void PrintValueComma(char val)
-{
+void PrintValueComma(double val) {
   Serial.print(val);
   comma();
 }
 
-void PrintValueComma(int val)
-{
+void PrintValueComma(char val) {
+  Serial.print(val);
+  comma();
+}
+
+void PrintValueComma(int val) {
   Serial.print(val);
   comma();
 }
@@ -221,11 +224,12 @@ void sendSerialTelemetry() {
   update = 0;
   switch (queryType) {
   case '=': // Reserved debug command to view any variable from Serial Monitor
+    //PrintValueComma(degrees(flightAngle->getHeading()));
+    //PrintValueComma(flightAngle->getData(YAW));
+    //PrintValueComma(gyro.gyroData[YAW]);
+    //Serial.print(degrees(flightAngle->getData(YAW)));
+    //Serial.println();
     //printFreeMemory();
-    Serial.print(receiver.getAngle(ROLL));
-    comma();
-    Serial.print(receiver.getAngle(PITCH));
-    Serial.println();
     //queryType = 'X';
     break;
   case 'B': // Send roll and pitch gyro PID values
@@ -308,10 +312,11 @@ void sendSerialTelemetry() {
     for (byte axis = ROLL; axis < YAW; axis++) {
       PrintValueComma(levelAdjust[axis]);
     }
-    PrintValueComma(_flightAngle->getData(ROLL));
-    PrintValueComma(_flightAngle->getData(PITCH));
-    #ifdef HeadingMagHold
-      PrintValueComma(compass.getAbsoluteHeading());
+    PrintValueComma(degrees(flightAngle->getData(ROLL)));
+    PrintValueComma(degrees(flightAngle->getData(PITCH)));
+    #if defined(HeadingMagHold) || defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
+      //PrintValueComma(compass.getAbsoluteHeading());
+      PrintValueComma(flightAngle->getDegreesHeading(YAW));
     #else
       PrintValueComma(0);
     #endif
@@ -355,8 +360,13 @@ void sendSerialTelemetry() {
       PrintValueComma(motors.getMotorCommand(motor));
     }
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
-      PrintValueComma(accel.getFlightData(axis));
-    }
+      if (axis == ROLL)
+        PrintValueComma(accel.getFlightData(YAXIS));
+      else if (axis == PITCH)
+        PrintValueComma(accel.getFlightData(XAXIS));
+      else
+        PrintValueComma(accel.getFlightData(ZAXIS));
+    }  
     Serial.print(armed, BIN);
     comma();
     if (flightMode == STABLE)
@@ -364,7 +374,8 @@ void sendSerialTelemetry() {
     if (flightMode == ACRO)
       PrintValueComma(1000);
     #ifdef HeadingMagHold
-      PrintValueComma(compass.getAbsoluteHeading());
+      //PrintValueComma(compass.getAbsoluteHeading());
+      PrintValueComma(flightAngle->getDegreesHeading(YAW));
     #else
       PrintValueComma(0);
     #endif
@@ -435,10 +446,6 @@ void sendSerialTelemetry() {
     PrintValueComma(5);
 #elif defined(ArduCopter)
     PrintValueComma(6);
-#elif defined(Multipilot)
-    PrintValueComma(7);
-#elif defined(MultipilotI2C)
-    PrintValueComma(8);
 #elif defined(AeroQuadMega_CHR6DM)
     PrintValueComma(5);
 #elif defined(APM_OP_CHR6DM)
@@ -554,4 +561,17 @@ void printInt(int data) {
   Serial.print(msb, BYTE);
   Serial.print(lsb, BYTE);
 }
-#endif
+
+void sendBinaryFloat(float data) {
+  union binaryFloatType {
+    byte floatByte[4];
+    float floatVal;
+  } binaryFloat;
+  
+  binaryFloat.floatVal = data;
+  Serial.print(binaryFloat.floatByte[3], BYTE);
+  Serial.print(binaryFloat.floatByte[2], BYTE);
+  Serial.print(binaryFloat.floatByte[1], BYTE);
+  Serial.print(binaryFloat.floatByte[0], BYTE);
+}
+

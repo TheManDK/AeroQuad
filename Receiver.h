@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.2 - Feburary 2011
+  AeroQuad v2.3 - March 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -31,7 +31,7 @@ public:
   float transmitterSmooth[LASTCHANNEL];
   float mTransmitter[LASTCHANNEL];
   float bTransmitter[LASTCHANNEL];
-  unsigned long currentTime, previousTime;
+  //unsigned long currentTime, previousTime;
 
   Receiver(void) {
     transmitterCommand[ROLL] = 1500;
@@ -132,8 +132,8 @@ public:
   const float getAngle(byte channel) {
     // Scale 1000-2000 usecs to -45 to 45 degrees
     // m = 0.09, b = -135
-    // reduce transmitterCommand by xmitFactor to lower sensitivity of transmitter input
-    return (0.09 * transmitterCommand[channel]) - 135;
+    //return (0.09 * transmitterCommand[channel]) - 135;
+    return (0.09 * receiverData[channel]) - 135;
   }
 };
 
@@ -445,13 +445,13 @@ public:
     SREG = oldSREG;
 
     for(byte channel = ROLL; channel < LASTCHANNEL; channel++) {
-      currentTime = micros();
+      //currentTime = micros();
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * data[channel]) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
       transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
       //transmitterCommandSmooth[channel] = transmitterFilter[channel].filter(receiverData[channel]);
-      previousTime = currentTime;
+      //previousTime = currentTime;
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500
@@ -546,12 +546,12 @@ public:
 
   void read(void) {
     for(byte channel = ROLL; channel < LASTCHANNEL; channel++) {
-      currentTime = micros();
+      //currentTime = micros();
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * ((PWM_RAW[receiverPin[channel]]+600)/2)) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
       transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
-      previousTime = currentTime;
+      //previousTime = currentTime;
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500
@@ -628,12 +628,12 @@ public:
 
 
     for(byte channel = ROLL; channel < LASTCHANNEL; channel++) {
-      currentTime = micros();
+      //currentTime = micros();
       // Apply transmitter calibration adjustment
       receiverData[channel] = (mTransmitter[channel] * data[channel]) + bTransmitter[channel];
       // Smooth the flight control transmitter inputs
       transmitterCommandSmooth[channel] = filterSmooth(receiverData[channel], transmitterCommandSmooth[channel], transmitterSmooth[channel]);
-      previousTime = currentTime;
+      //previousTime = currentTime;
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500

@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.2 - Feburary 2011
+  AeroQuad v2.3 - March 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -71,11 +71,11 @@ void initializeEEPROM(void) {
   PID[YAW].P = 3.0;
   PID[YAW].I = 0.05;
   PID[YAW].D = 0.0;
-  PID[LEVELROLL].P = 7.0;
-  PID[LEVELROLL].I = 1.0;
+  PID[LEVELROLL].P = 4.0;
+  PID[LEVELROLL].I = 0.15;
   PID[LEVELROLL].D = 0.0;
-  PID[LEVELPITCH].P = 7.0;
-  PID[LEVELPITCH].I = 1.0;
+  PID[LEVELPITCH].P = 4.0;
+  PID[LEVELPITCH].I = 0.15;
   PID[LEVELPITCH].D = 0.0;
   PID[HEADING].P = 3.0;
   PID[HEADING].I = 0.1;
@@ -109,7 +109,8 @@ void initializeEEPROM(void) {
   levelOff = 150.0;
   gyro.setSmoothFactor(1.0);
   accel.setSmoothFactor(1.0);
-  accel.setOneG(500);
+  // AKA - old setOneG not in SI - accel.setOneG(500);
+  accel.setOneG(9.80665); // AKA set one G to 9.8 m/s^2
   timeConstant = 7.0;
   for (byte channel = ROLL; channel < LASTCHANNEL; channel++) {
     receiver.setTransmitterSlope(channel, 1.0);
@@ -234,7 +235,6 @@ void writeEEPROM(void){
     writeFloat(receiver.getTransmitterOffset(channel), offset+4);
     writeFloat(receiver.getSmoothFactor(channel),      offset+8);
   }
-
 
   writeFloat(smoothHeading, HEADINGSMOOTH_ADR);
   writeFloat(aref, AREF_ADR);
