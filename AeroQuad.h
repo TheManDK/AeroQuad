@@ -223,6 +223,12 @@ byte armed = OFF;
 byte safetyCheck = OFF;
 byte update = 0;
 
+#ifdef GPS
+long latitude = 0;
+long longitude = 0;
+unsigned long position_age = 0;
+#endif
+
 /**************************************************************/
 /******************* Loop timing parameters *******************/
 /**************************************************************/

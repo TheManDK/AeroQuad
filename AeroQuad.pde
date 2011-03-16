@@ -57,7 +57,6 @@
  ****************************************************************************/
 
 #define MAVLINK
-#define MAVLINK_RECEIVER
 
 #define MAV_SYSTEM_ID 100
 #define MAV_COMPONENT_ID MAV_COMP_ID_IMU
@@ -74,8 +73,8 @@
 #define AltitudeHold // Enables BMP085 Barometer (experimental, use at your own risk)
 #define BattMonitor //define your personal specs in BatteryMonitor.h! Full documentation with schematic there
 //#define WirelessTelemetry  // Enables Wireless telemetry on Serial3  // jihlein: Wireless telemetry enable
-#define BinaryWrite // Enables fast binary transfer of flight data to Configurator
-
+//#define BinaryWrite // Enables fast binary transfer of flight data to Configurator
+//#define GPS
 
 
 // *******************************************************************************************************************************
@@ -104,6 +103,10 @@
 #include "Accel.h"
 #include "Gyro.h"
 #include "Motors.h"
+
+#ifdef GPS
+  #include "GPS.h"
+#endif
 
 // Create objects defined from Configuration Section above
 #ifdef AeroQuad_v1
@@ -178,12 +181,7 @@
 #endif
 
 #ifdef AeroQuadMega_v2
-  //Receiver_AeroQuadMega receiver;
-  #ifdef MAVLINK_RECEIVER
-    Receiver_MavLink receiver;
-  #else
-    Receiver_AeroQuadMega receiver;
-  #endif
+  Receiver_AeroQuadMega receiver;
   Motors_PWMtimer motors;
   //Motors_AeroQuadI2C motors; // Use for I2C based ESC's
   Accel_AeroQuadMega_v2 accel;
@@ -458,15 +456,16 @@ void loop () {
     readPilotCommands(); // defined in FlightCommand.pde
     receiverTime = currentTime + RECEIVERLOOPTIME;
   }
-  #ifdef CONFIGURATOR
+  #ifndef MAVLINK
   // Listen for configuration commands and reports telemetry
   if ((telemetryLoop == ON) && (currentTime > telemetryTime)) { // 20Hz
     readSerialCommand(); // defined in SerialCom.pde
     sendSerialTelemetry(); // defined in SerialCom.pde
     telemetryTime = currentTime + TELEMETRYLOOPTIME;
   }
+  #endif
   
-  #ifdef BinaryWrite
+  #if defined(BinaryWrite) && !defined(MAVLINK)
     // **************************************************************
     // ***************** Fast Transfer Of Sensor Data ***************
     // **************************************************************
