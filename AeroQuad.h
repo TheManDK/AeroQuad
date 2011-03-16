@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.2 - Feburary 2011
+  AeroQuad v2.3 - March 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -24,10 +24,11 @@
 #include "pins_arduino.h"
 
 // Flight Software Version
-#define VERSION 110126
+#define VERSION 2.3
 
 //#define BAUD 115200
-//#define BAUD 111111
+//#define BAUD 115200
+//#define BAUD 111111 // use this to be compatible with USB and XBee connections
 #define BAUD 57600
 #define LEDPIN 13
 #define ON 1
@@ -167,12 +168,18 @@ float relativeHeading = 0; // current heading the quad is set to (set point)
 float absoluteHeading = 0;;
 float setHeading = 0;
 
+// batteryMonitor & Altutude Hold
+int throttle = 1000;
+int autoDescent = 0;
+
 // Altitude Hold
+#define ALTPANIC 2 // special state that allows immediate turn off of Altitude hold if large throttle changesa are made at the TX
+#define ALTBUMP 90 // amount of stick movement to cause an altutude bump (up or down)
+#define PANICSTICK_MOVEMENT 250 // 80 if althold on and throttle commanded to move by a gross amount, set PANIC
+//#define MINSTICK_MOVEMENT 32 // any movement less than this doesn't not trigger a rest of the holdaltitude
 #define TEMPERATURE 0
 #define PRESSURE 1
 int throttleAdjust = 0;
-int throttle = 1000;
-int autoDescent = 0;
 //#ifndef AeroQuad_v18
 int minThrottleAdjust = -50;
 int maxThrottleAdjust = 50;
@@ -216,6 +223,12 @@ byte tlmType = 0;
 byte armed = OFF;
 byte safetyCheck = OFF;
 byte update = 0;
+
+#ifdef GPS
+long latitude = 0;
+long longitude = 0;
+unsigned long position_age = 0;
+#endif
 
 /**************************************************************/
 /******************* Loop timing parameters *******************/
@@ -378,6 +391,7 @@ void processFlightControlXMode(void); // defined in FlightControl.pde
 void processFlightControlPlusMode(void); // defined in FlightControl.pde
 void processArdupirateSuperStableMode(void);  // defined in FlightControl.pde
 void processAeroQuadStableMode(void);  // defined in FlightControl.pde
+void processAttitudeMode(void); // defined in FlightControl.pde
 void readSerialCommand(void);  //defined in SerialCom.pde
 void sendSerialTelemetry(void); // defined in SerialCom.pde
 #ifdef MAVLINK
@@ -396,6 +410,7 @@ void sendSerialTelemetry(void); // defined in SerialCom.pde
 #endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde
+void sendBinaryFloat(float); // defined in SerialCom.pde
 void comma(void); // defined in SerialCom.pde
 
 #if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
