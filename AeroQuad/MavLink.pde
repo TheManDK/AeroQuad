@@ -60,40 +60,40 @@ void readSerialMavLink() {
           break;
           case MAVLINK_MSG_ID_ACTION: {
             uint8_t result = 0;
-            
-            if (mavlink_msg_action_get_target(&msg) != MAV_SYSTEM_ID || mavlink_msg_action_get_target_component(&msg) != MAV_COMPONENT_ID) return;
-              uint8_t action = mavlink_msg_action_get_action(&msg);
-              switch(action) {
-                MAV_ACTION_MOTORS_START: {
-                  armed = ON;
-                  result = 1;
-                  system_status = MAV_STATE_ACTIVE;
-                  sendSerialSysStatus();
-                }
-                break;
-                MAV_ACTION_MOTORS_STOP: {
-                  armed = OFF;
-                  result = 1;
-                  system_status = MAV_STATE_STANDBY;
-                  sendSerialSysStatus();
-                }
-                break;
-                MAV_ACTION_CALIBRATE_GYRO: {
-                  if (system_status == MAV_STATE_STANDBY)
-                  {
-                    gyro.calibrate();
-                    result = 1;
-                  }
-                  else
-                  {
-                  result = 0;
-                  }
-                }                
-                break;                    
+            uint8_t action = mavlink_msg_action_get_action(&msg);
+            if (action == MAV_ACTION_MOTORS_START)
+            {
+              armed = ON;
+              result = 1;
+            }
+            else if (action == MAV_ACTION_MOTORS_STOP)
+            {
+              armed = OFF;
+              result = 1;
+            }
+/*
+
+              MAV_ACTION_MOTORS_STOP: {
+                armed = OFF;
+                result = 1;
               }
-             
+              break;
+              MAV_ACTION_CALIBRATE_GYRO: {
+                if (system_status == MAV_STATE_STANDBY)
+                {
+                  gyro.calibrate();
+                  result = 0;
+                }
+                else
+                {
+                  result = 1;
+                }
+              }                
+              break;                    
+            }
+            */
              mavlink_msg_action_ack_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, action, result);
-             uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
+             len = mavlink_msg_to_send_buffer(buf, &msg);
              PORT.write(buf, len);
           }
           break;
@@ -168,7 +168,7 @@ void sendSerialAttitude() {
   PORT.write(buf, len);
 }
 void sendSerialHudData() {
-  mavlink_msg_vfr_hud_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0.0, 0.0, gyro.gyroHeading, (receiver.receiverData[THROTTLE]-1000)/10, altitude.getData()*10, 0);
+  mavlink_msg_vfr_hud_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0.0, 0.0, gyro.gyroHeading, (receiver.receiverData[THROTTLE]-1000)/10, altitude->getData(), 0.0);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   PORT.write(buf, len);
   
@@ -177,7 +177,7 @@ void sendSerialGpsPostion() {
   #ifdef UseGPS
     if (gps->latitude != 0.0 && gps->longitude != 0.0)
     {
-      mavlink_msg_global_position_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, gps->latitude*100, gps->longitude*100, 0, 0, 0, 0);
+      mavlink_msg_global_position_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, gps->latitude*100, gps->longitude*100, gps->altitude*10, 0, 0, 0);
       len = mavlink_msg_to_send_buffer(buf, &msg);
       PORT.write(buf, len);
     }
@@ -191,7 +191,7 @@ void sendSerialAltitude() {
 }
 
 void sendSerialRawPressure() {
-  mavlink_msg_raw_pressure_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(1000*altitude.getRawData()), 0,0,0);
+  mavlink_msg_raw_pressure_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, MAV_COMPONENT_ID, (int)(1000*altitude->getRawData()), 0,0,0);
   len = mavlink_msg_to_send_buffer(buf, &msg);
   PORT.write(buf, len);
 }

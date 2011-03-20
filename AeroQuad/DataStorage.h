@@ -96,7 +96,7 @@ void initializeEEPROM(void) {
     PID[ZDAMPENING].D = 0.0;
     minThrottleAdjust = -50.0;
     maxThrottleAdjust = 50.0; //we don't want it to be able to take over totally
-    altitude.setSmoothFactor(0.1);
+    altitude->setSmoothFactor(0.1);
   #endif
   #ifdef HeadingMagHold
     compass.setMagCal(XAXIS, 1, 0);
@@ -158,7 +158,7 @@ void readEEPROM(void) {
     PID[ALTITUDE].windupGuard = readFloat(ALTITUDE_WINDUP_ADR);
     minThrottleAdjust = readFloat(ALTITUDE_MIN_THROTTLE_ADR);
     maxThrottleAdjust = readFloat(ALTITUDE_MAX_THROTTLE_ADR);
-    altitude.setSmoothFactor(readFloat(ALTITUDE_SMOOTH_ADR));
+    altitude->setSmoothFactor(readFloat(ALTITUDE_SMOOTH_ADR));
     readPID(ZDAMPENING, ZDAMP_PGAIN_ADR);
   #endif
 
@@ -210,7 +210,7 @@ void writeEEPROM(void){
     writeFloat(PID[ALTITUDE].windupGuard, ALTITUDE_WINDUP_ADR);
     writeFloat(minThrottleAdjust, ALTITUDE_MIN_THROTTLE_ADR);
     writeFloat(maxThrottleAdjust, ALTITUDE_MAX_THROTTLE_ADR);
-    writeFloat(altitude.getSmoothFactor(), ALTITUDE_SMOOTH_ADR);
+    writeFloat(altitude->getSmoothFactor(), ALTITUDE_SMOOTH_ADR);
     writePID(ZDAMPENING, ZDAMP_PGAIN_ADR);
   #endif
   #ifdef HeadingMagHold

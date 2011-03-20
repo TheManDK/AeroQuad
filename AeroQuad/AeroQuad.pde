@@ -196,7 +196,8 @@
     //BMP085 tmpAltitude;
     //AltitudeProvider *altitude = &tmpAltitude;
     #include "Altitude.h"
-    Altitude_AeroQuad_v2 altitude;
+    Altitude_AeroQuad_v2 tmpaltitude;
+    Altitude_AeroQuad_v2 *altitude = &tmpaltitude;
   #endif
   #ifdef BattMonitor
     #include "BatteryMonitor.h"
@@ -411,7 +412,7 @@ void setup() {
 
   // Optional Sensors
   #ifdef AltitudeHold
-    altitude.initialize();
+    altitude->initialize();
   #endif
   
   #ifdef UseGPS
@@ -467,14 +468,14 @@ void loop () {
     readPilotCommands(); // defined in FlightCommand.pde
     receiverTime = currentTime + RECEIVERLOOPTIME;
   }
-  #ifndef MAVLINK
+  //#ifndef MAVLINK
   // Listen for configuration commands and reports telemetry
   if ((telemetryLoop == ON) && (currentTime > telemetryTime)) { // 20Hz
     readSerialCommand(); // defined in SerialCom.pde
     sendSerialTelemetry(); // defined in SerialCom.pde
     telemetryTime = currentTime + TELEMETRYLOOPTIME;
   }
-  #endif
+  //#endif
   
   #if defined(BinaryWrite) && !defined(MAVLINK)
     // **************************************************************
@@ -531,7 +532,6 @@ void loop () {
         
         sendSerialAttitude();
         sendSerialAltitude();
-        
         sendSerialRcScaled();
         
         */
@@ -551,12 +551,12 @@ void loop () {
         sendSerialRawPressure();
         rawDataTime = currentTime + RAWDATALOOPTIME;      
     }
-    
+    //HUD
     if ((attitudeLoop == ON) && (currentTime > attitudeTime)) {
         sendSerialHudData();
         sendSerialAttitude(); // Defined in MavLink.pde
         sendSerialGpsPostion();
-        sendSerialAltitude();
+        
         attitudeTime = currentTime + ATTITUDELOOPTIME;      
     }
     

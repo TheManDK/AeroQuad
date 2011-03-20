@@ -38,7 +38,7 @@ void readSensors(void) {
   #endif
   #if defined(AltitudeHold)
     if (currentTime > altitudeTime) {
-      altitude.measure(); // defined in altitude.h
+      altitude->measure(); // defined in altitude.h
       altitudeTime = currentTime + ALTITUDELOOPTIME;
     }
   #endif

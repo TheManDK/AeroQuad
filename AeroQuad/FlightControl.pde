@@ -212,7 +212,7 @@ void processAltitudeHold(void)
   // http://aeroquad.com/showthread.php?359-Stable-flight-logic...&p=10325&viewfull=1#post10325
 #ifdef AltitudeHold
   if (altitudeHold == ON) {
-    throttleAdjust = updatePID(holdAltitude, altitude.getData(), &PID[ALTITUDE]);
+    throttleAdjust = updatePID(holdAltitude, altitude->getData(), &PID[ALTITUDE]);
     zDampening = updatePID(0, accel.getZaxis(), &PID[ZDAMPENING]); // This is stil under development - do not use (set PID=0)
     if((abs(flightAngle->getData(ROLL)) > 5) || (abs(flightAngle->getData(PITCH)) > 5)) { 
       PID[ZDAMPENING].integratedError = 0;

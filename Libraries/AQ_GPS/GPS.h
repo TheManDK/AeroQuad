@@ -26,6 +26,7 @@ class GPS {
 public:
   long latitude;
   long longitude;
+  long altitude;
   
   virtual void initialize(void);
   virtual void measure(void);

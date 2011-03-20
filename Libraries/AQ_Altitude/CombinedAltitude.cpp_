@@ -18,34 +18,31 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 #include <WProgram.h>
-#include "UP501.h"
+#include "CombinedAltitude.h"
 
-  void UP501::initialize()
+#include "AltitudeProvider.h"
+#include "BMP085.h"
+#include "Sonar.h"
+
+  void CombinedAltitude::initialize()
   {
-    Serial1.begin(9600);
-    Serial1.println("$PMTK251,38400*27");
-
-    Serial1.end();
-
-    delay(100);
-
-    Serial1.begin(38400);
-
-    Serial1.println("$PMTK300,200,0,0,0,0*2F");
+	bmp085.initialize();
+	sonar.initialize();
   }
 
-  void UP501::measure()  
+  void CombinedAltitude::measure()  
   {
-    while (Serial1.available())
-    {
-      byte b = Serial1.read();
-      if (gps.encode(b))
-      {
-        gps.get_position(&latitude, &longitude, &position_age);
-		altitude = gps.altitude();
-        return;
-      }
-      //Serial.write(b);
-    }
+	bmp085.measure();
+	sonar.measure();
+	if (sonar.rawAltitude > 400)
+	{
+		rawAltitude = sonar.rawAltitude;
+		altitude = sonar.altitude;
+	}
+	else
+	{
+		rawAltitude = bmp085.rawAltitude;
+		altitude = bmp085.altitude;
+	}
   }
 
