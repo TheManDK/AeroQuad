@@ -20,10 +20,6 @@
 #include <WProgram.h>
 #include "CombinedAltitude.h"
 
-#include "AltitudeProvider.h"
-#include "BMP085.h"
-#include "Sonar.h"
-
   void CombinedAltitude::initialize()
   {
 	bmp085.initialize();
@@ -32,17 +28,19 @@
 
   void CombinedAltitude::measure()  
   {
+  
 	bmp085.measure();
 	sonar.measure();
-	if (sonar.rawAltitude > 400)
+	if (sonar.rawAltitude < 2)
 	{
-		rawAltitude = sonar.rawAltitude;
-		altitude = sonar.altitude;
+		rawAltitude = (sonar.rawAltitude + bmp085.rawAltitude) / 2;
+		altitude = (sonar.altitude + bmp085.altitude) / 2;
 	}
 	else
 	{
 		rawAltitude = bmp085.rawAltitude;
 		altitude = bmp085.altitude;
 	}
+	
   }
 

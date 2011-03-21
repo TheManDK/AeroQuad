@@ -24,7 +24,6 @@
 
 #define TEMPERATURE 0
 #define PRESSURE 1
-
 void BMP085::requestRawPressure(void) {
     I2C::updateRegisterI2C(altitudeAddress, 0xF4, 0x34+(overSamplingSetting<<6));
   }
@@ -53,7 +52,22 @@ void BMP085::requestRawPressure(void) {
 
   void BMP085::initialize()
   {
-    I2C::sendByteI2C(altitudeAddress, 0xAA);
+	altitudeAddress = 0x77;
+    // oversampling setting
+    // 0 = ultra low power
+    // 1 = standard
+    // 2 = high
+    // 3 = ultra high resolution
+    overSamplingSetting = 3;
+    pressure = 0;
+    groundPressure = 0;
+    temperature = 0;
+    
+    groundTemperature = 0;
+    groundAltitude = 0;
+    pressureFactor = 1/5.255;
+	
+	I2C::sendByteI2C(altitudeAddress, 0xAA);
     ac1 = I2C::readWordWaitI2C(altitudeAddress);
     I2C::sendByteI2C(altitudeAddress, 0xAC);
     ac2 = I2C::readWordWaitI2C(altitudeAddress);
@@ -61,7 +75,8 @@ void BMP085::requestRawPressure(void) {
     ac3 = I2C::readWordWaitI2C(altitudeAddress);
     I2C::sendByteI2C(altitudeAddress, 0xB0);
     ac4 = I2C::readWordWaitI2C(altitudeAddress);
-    I2C::sendByteI2C(altitudeAddress, 0xB2);
+	
+	I2C::sendByteI2C(altitudeAddress, 0xB2);
     ac5 = I2C::readWordWaitI2C(altitudeAddress);
     I2C::sendByteI2C(altitudeAddress, 0xB4);
     ac6 = I2C::readWordWaitI2C(altitudeAddress);
@@ -93,7 +108,7 @@ void BMP085::requestRawPressure(void) {
 
   void BMP085::measure()  
   {
-   long x1, x2, x3, b3, b5, b6, p;
+    long x1, x2, x3, b3, b5, b6, p;
     unsigned long b4, b7;
     int32_t tmp;
 

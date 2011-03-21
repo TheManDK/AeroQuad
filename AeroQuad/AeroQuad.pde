@@ -50,6 +50,7 @@
 #define XConfig
 //#define plusConfig
 //#define HEXACOAXIAL
+
 //#define HEXARADIAL
 
 
@@ -190,14 +191,20 @@
   #ifdef HeadingMagHold
     #include "Compass.h"
     Magnetometer_HMC5843 compass;
+    
   #endif
+  
   #ifdef AltitudeHold
-    //#include <BMP085.h>
-    //BMP085 tmpAltitude;
-    //AltitudeProvider *altitude = &tmpAltitude;
-    #include "Altitude.h"
-    Altitude_AeroQuad_v2 tmpaltitude;
-    Altitude_AeroQuad_v2 *altitude = &tmpaltitude;
+    //#include <Sonar.h>
+    //Sonar tmpAltitude;
+    
+    #include <BMP085.h>
+    BMP085 tmpAltitude;
+    
+    //#include <CombinedAltitude.h>
+    //CombinedAltitude tmpAltitude;
+    
+    AltitudeProvider *altitude = &tmpAltitude;
   #endif
   #ifdef BattMonitor
     #include "BatteryMonitor.h"

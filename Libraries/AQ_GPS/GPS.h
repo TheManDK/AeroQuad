@@ -27,6 +27,7 @@ public:
   long latitude;
   long longitude;
   long altitude;
+  long speed;
   
   virtual void initialize(void);
   virtual void measure(void);

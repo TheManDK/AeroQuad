@@ -43,6 +43,7 @@
       {
         gps.get_position(&latitude, &longitude, &position_age);
 		altitude = gps.altitude();
+		speed = gps.speed();
         return;
       }
       //Serial.write(b);

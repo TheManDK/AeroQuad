@@ -18,11 +18,11 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-#ifndef SONAR_H
-#define SONAR_H
+#ifndef COMBINEDALTITUDE_H
+#define COMBINEDALTITUDE_H
 #include "AltitudeProvider.h"
-#include "BMP085.h"
-#include "Sonar.h"
+#include <BMP085.h>
+#include <Sonar.h>
 
 class CombinedAltitude : public AltitudeProvider 
 {
@@ -32,7 +32,7 @@ public:
   void measure();
   
 private:
-  BMP085 bmp085;
   Sonar sonar;
+  BMP085 bmp085;
 };
 #endif

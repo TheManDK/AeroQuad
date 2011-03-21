@@ -25,6 +25,8 @@
 class AltitudeProvider {
 public:
   double altitude, rawAltitude;
+  float groundTemperature; // remove later
+  float groundPressure; // remove later
   float groundAltitude;
   float smoothFactor;
   

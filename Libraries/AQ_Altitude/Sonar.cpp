@@ -21,15 +21,15 @@
 #include "Sonar.h"
 #include "AQMath.h"
 
-#define SONARPIN 5
+#define SONARPIN A1
   void Sonar::initialize()
   {
-    pinMode(SONARPIN, INPUT);
+    groundAltitude = 0;
   }
 
   void Sonar::measure()  
   {
-    rawAltitude = (pulseIn(SONARPIN, HIGH)/ 58)/10;
+    rawAltitude = (analogRead(SONARPIN)*2.54)/100;
     altitude = AQMath::filterSmooth(rawAltitude, altitude, smoothFactor);
   }
 

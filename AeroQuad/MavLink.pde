@@ -71,6 +71,11 @@ void readSerialMavLink() {
               armed = OFF;
               result = 1;
             }
+            else if (action == MAV_ACTION_EMCY_KILL || action == MAV_ACTION_CONFIRM_KILL)
+            {
+              armed = OFF;
+              result = 1;
+            }
 /*
 
               MAV_ACTION_MOTORS_STOP: {
@@ -172,12 +177,13 @@ void sendSerialHudData() {
   len = mavlink_msg_to_send_buffer(buf, &msg);
   PORT.write(buf, len);
   
+  
 }
 void sendSerialGpsPostion() {
   #ifdef UseGPS
-    if (gps->latitude != 0.0 && gps->longitude != 0.0)
+    if (true /* || gps->latitude != 0.0 && gps->longitude != 0.0*/)
     {
-      mavlink_msg_global_position_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, gps->latitude*100, gps->longitude*100, gps->altitude*10, 0, 0, 0);
+      mavlink_msg_global_position_int_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, gps->latitude*100, gps->longitude*100, altitude->getData()*1000 /*gps->altitude*10*/, gps->speed, 0, 0);
       len = mavlink_msg_to_send_buffer(buf, &msg);
       PORT.write(buf, len);
     }

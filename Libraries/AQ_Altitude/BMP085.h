@@ -18,11 +18,12 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-#ifndef SONAR_H
-#define SONAR_H
+#ifndef BMP085_H
+#define BMP085_H
 
 #include "AltitudeProvider.h"
-
+#define TEMPERATURE 0
+#define PRESSURE 1
 
 class BMP085 : public AltitudeProvider 
 {

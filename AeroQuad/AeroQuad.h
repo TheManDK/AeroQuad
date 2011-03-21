@@ -177,8 +177,8 @@ int autoDescent = 0;
 #define ALTBUMP 90 // amount of stick movement to cause an altutude bump (up or down)
 #define PANICSTICK_MOVEMENT 250 // 80 if althold on and throttle commanded to move by a gross amount, set PANIC
 //#define MINSTICK_MOVEMENT 32 // any movement less than this doesn't not trigger a rest of the holdaltitude
-#define TEMPERATURE 0
-#define PRESSURE 1
+//#define TEMPERATURE 0
+//#define PRESSURE 1
 int throttleAdjust = 0;
 //#ifndef AeroQuad_v18
 int minThrottleAdjust = -50;
@@ -224,11 +224,6 @@ byte armed = OFF;
 byte safetyCheck = OFF;
 byte update = 0;
 
-#ifdef GPS
-long latitude = 0;
-long longitude = 0;
-unsigned long position_age = 0;
-#endif
 
 /**************************************************************/
 /******************* Loop timing parameters *******************/
