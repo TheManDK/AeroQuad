@@ -54,6 +54,8 @@
 //#define HEXARADIAL
 
 
+
+#define UseLED
 /****************************************************************************
  **************** Define Communication Protocol Configuration ***************
  ****************************************************************************/
@@ -105,7 +107,6 @@
 #include "Accel.h"
 #include "Gyro.h"
 #include "Motors.h"
-
 
 // Create objects defined from Configuration Section above
 #ifdef AeroQuad_v1
@@ -193,13 +194,17 @@
     Magnetometer_HMC5843 compass;
     
   #endif
-  
+  #ifdef UseLED
+    #include <ProgramableLeds.h>
+    ProgramableLeds tmpLEDs;
+    LedProvider *leds = &tmpLEDs;
+  #endif
   #ifdef AltitudeHold
-    //#include <Sonar.h>
-    //Sonar tmpAltitude;
+    #include <Sonar.h>
+    Sonar tmpAltitude;
     
-    #include <BMP085.h>
-    BMP085 tmpAltitude;
+    //#include <BMP085.h>
+    //BMP085 tmpAltitude;
     
     //#include <CombinedAltitude.h>
     //CombinedAltitude tmpAltitude;
@@ -375,6 +380,10 @@ void setup() {
     pinMode(LED_Yellow, OUTPUT);
     pinMode(LED_Green, OUTPUT);
   #endif
+  #ifdef UseLED
+    leds->initialize();
+    leds->startProgram(0);
+  #endif
   
   #if defined(AeroQuad_v18) || defined(AeroQuadMega_v2) || defined(AeroQuad_Wii) || defined(AeroQuadMega_Wii) || defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM) || defined(ArduCopter)
     Wire.begin();
@@ -549,7 +558,8 @@ void loop () {
     if ((systemStatusLoop == ON) && (currentTime > systemStatusTime)) {
         
         sendSerialSysStatus(); // Defined in MavLink.pde
-        systemStatusTime = currentTime + SYSTEMSTATUSLOOPTIME;      
+        systemStatusTime = currentTime + SYSTEMSTATUSLOOPTIME;    
+        
     }
     
     if ((rawDataLoop == ON) && (currentTime > rawDataTime)) { 
@@ -563,8 +573,8 @@ void loop () {
         sendSerialHudData();
         sendSerialAttitude(); // Defined in MavLink.pde
         sendSerialGpsPostion();
-        
-        attitudeTime = currentTime + ATTITUDELOOPTIME;      
+        attitudeTime = currentTime + ATTITUDELOOPTIME; 
+        leds->nextStep();   
     }
     
   #endif

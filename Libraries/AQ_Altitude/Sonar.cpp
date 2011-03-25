@@ -29,7 +29,7 @@
 
   void Sonar::measure()  
   {
-    rawAltitude = (analogRead(SONARPIN)*2.54)/100;
+    rawAltitude = (analogRead(SONARPIN)*2.54)/200;
     altitude = AQMath::filterSmooth(rawAltitude, altitude, smoothFactor);
   }
 

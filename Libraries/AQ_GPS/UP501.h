@@ -22,7 +22,7 @@
 #define UP501_H
 
 #include "GPS.h"
-#include "../TinyGPS/TinyGPS.h"
+#include "TinyGPS.h"
 
 
 class UP501 : public GPS 
