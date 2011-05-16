@@ -116,7 +116,7 @@ void BMP085::requestRawPressure(void) {
     // each loop, since it's slow to measure pressure
     if (select == PRESSURE) {
       rawPressure = readRawPressure();
-      if (pressureCount == 1) {
+      if (pressureCount == 4) {
         requestRawTemperature();
         pressureCount = 0;
        select = TEMPERATURE;

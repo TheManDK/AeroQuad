@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.3 - March 2011
+  AeroQuad v2.4 - April 2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -68,23 +68,38 @@ public:
     }
   }
 
+  // returns non-smoothed non-scaled ADC data in PWM full range 1000-2000 values
   const int getRaw(byte channel) {
     return receiverData[channel];
   }
-
+  
+  // returns raw but smoothed receiver(channel) in PWM
+  const int getRawSmoothed(byte channel) {
+    return transmitterCommandSmooth[channel];
+  }
+ 
+   // returns smoothed & scaled receiver(channel) in PWM values, zero centered
   const int getData(byte channel) {
-    // reduce sensitivity of transmitter input by xmitFactor
     return transmitterCommand[channel];
+  }
+  
+  // return the smoothed & scaled number of radians/sec in stick movement - zero centered
+  const float getSIData(byte channel) {
+    // 2.3 Original
+    return ((transmitterCommand[channel] - transmitterZero[channel]) * (2.5 * PWM2RAD));  // +/- 2.5RPS 50% of full rate
+    // 2.3 Stable
+    //return ((transmitterCommand[channel] - transmitterZero[channel]) * (5.0 * PWM2RAD));  // +/- 5RPS factored by xmitfactor of full rate
   }
 
   const int getTrimData(byte channel) {
     return receiverData[channel] - transmitterTrim[channel];
   }
 
+  // returns Zero value of channel in PWM
   const int getZero(byte channel) {
     return transmitterZero[channel];
   }
-
+  // sets zero value of channel in PWM
   void setZero(byte channel, int value) {
     transmitterZero[channel] = value;
   }
@@ -132,15 +147,15 @@ public:
   const float getAngle(byte channel) {
     // Scale 1000-2000 usecs to -45 to 45 degrees
     // m = 0.09, b = -135
-    //return (0.09 * transmitterCommand[channel]) - 135;
-    return (0.09 * receiverData[channel]) - 135;
+    return (0.09 * transmitterCommand[channel]) - 135;
+    //return (0.09 * receiverData[channel]) - 135;
   }
 };
 
 /*************************************************/
 /*************** AeroQuad PCINT ******************/
 /*************************************************/
-#if defined(AeroQuad_v1) || defined(AeroQuad_v18) || defined(AeroQuad_Wii) || defined(AeroQuad_v1_IDG)
+#if defined(AeroQuad_v1) || defined(AeroQuad_v18) || defined(AeroQuad_Mini) || defined(AeroQuad_Wii) || defined(AeroQuad_v1_IDG)
 volatile uint8_t *port_to_pcmask[] = {
   &PCMSK0,
   &PCMSK1,
@@ -261,11 +276,13 @@ public:
     }
 
     // Reduce transmitter commands using xmitFactor and center around 1500
-    for (byte channel = ROLL; channel < THROTTLE; channel++)
-      transmitterCommand[channel] = ((transmitterCommandSmooth[channel] - transmitterZero[channel]) * xmitFactor) + transmitterZero[channel];
+    for (byte channel = ROLL; channel < LASTCHANNEL; channel++)
+      if (channel < THROTTLE)
+        transmitterCommand[channel] = ((transmitterCommandSmooth[channel] - transmitterZero[channel]) * xmitFactor) + transmitterZero[channel];
+      else
     // No xmitFactor reduction applied for throttle, mode and
-    for (byte channel = THROTTLE; channel < LASTCHANNEL; channel++)
-      transmitterCommand[channel] = transmitterCommandSmooth[channel];
+    //for (byte channel = THROTTLE; channel < LASTCHANNEL; channel++)
+        transmitterCommand[channel] = transmitterCommandSmooth[channel];
   }
 };
 #endif
@@ -385,7 +402,6 @@ public:
   }
 };
 
-
 class Receiver_AeroQuadMega_Fake :
 public Receiver {
 private:
@@ -467,7 +483,8 @@ ISR(TIMER4_CAPT_vect)//interrupt.
     }
     else
     {
-      PWM_RAW[PPM_Counter]=Pulse_Width; //Saving pulse.
+      //PWM_RAW[PPM_Counter]=Pulse_Width; //Saving pulse.
+      PWM_RAW[PPM_Counter & 0x07]=Pulse_Width; //Saving pulse.
       PPM_Counter++;
     }
     Start_Pulse=ICR4;

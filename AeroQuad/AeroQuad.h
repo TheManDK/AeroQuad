@@ -1,5 +1,5 @@
 /*
-  AeroQuad v2.3 - March 2011
+  AeroQuad v2.4 - April2011
   www.AeroQuad.com
   Copyright (c) 2011 Ted Carancho.  All rights reserved.
   An Open Source Arduino based multicopter.
@@ -24,12 +24,11 @@
 #include "pins_arduino.h"
 
 // Flight Software Version
-#define VERSION 2.3
+#define VERSION 2.4
 
 //#define BAUD 115200
-//#define BAUD 115200
-//#define BAUD 111111 // use this to be compatible with USB and XBee connections
-#define BAUD 57600
+#define BAUD 111111 // use this to be compatible with USB and XBee connections
+//#define BAUD 57600
 #define LEDPIN 13
 #define ON 1
 #define OFF 0
@@ -79,6 +78,10 @@
 struct PIDdata {
   float P, I, D;
   float lastPosition;
+  // AKA experiments with PID
+  float previousPIDTime;
+  bool firstPass;
+  bool typePID;
   float integratedError;
   float windupGuard; // Thinking about having individual wind up guards for each PID
 } PID[10];
@@ -91,14 +94,14 @@ struct PIDdata {
 // ZDAMPENING = 9 (used in altitude hold to dampen vertical accelerations)
 float windupGuard; // Read in from EEPROM
 
+// PID types
+#define NOTYPE 0
+#define TYPEPI 1
+
 // Smoothing filter parameters
 #define GYRO 0
 #define ACCEL 1
-#if defined(__AVR_ATmega328__) || defined(__AVR_ATmega328P__)
-  #define FINDZERO 9
-#else
-  #define FINDZERO 49
-#endif
+#define FINDZERO 49
 float smoothHeading;
 
 // Sensor pin assignments
@@ -143,10 +146,13 @@ float aref; // Read in from EEPROM
 #define ACRO 0
 #define STABLE 1
 byte flightMode;
+unsigned long frameCounter = 0; // main loop executive frame counter
 int minAcro; // Read in from EEPROM, defines min throttle during flips
+#define PWM2RAD 0.002 //  Based upon 5RAD for full stick movement, you take this times the RAD to get the PWM conversion factor
 
 // Auto level setup
-int levelAdjust[2] = {0,0};
+float levelAdjust[2] = {0.0,0.0};
+//int levelAdjust[2] = {0,0};
 int levelLimit; // Read in from EEPROM
 int levelOff; // Read in from EEPROM
 // Scale to convert 1000-2000 PWM to +/- 45 degrees
@@ -165,8 +171,10 @@ float commandedYaw = 0;
 float headingHold = 0; // calculated adjustment for quad to go to heading (PID output)
 float heading = 0; // measured heading from yaw gyro (process variable)
 float relativeHeading = 0; // current heading the quad is set to (set point)
-float absoluteHeading = 0;;
+//float absoluteHeading = 0;;
 float setHeading = 0;
+unsigned long headingTime = micros();
+byte headingHoldState = OFF;
 
 // batteryMonitor & Altutude Hold
 int throttle = 1000;
@@ -177,10 +185,10 @@ int autoDescent = 0;
 #define ALTBUMP 90 // amount of stick movement to cause an altutude bump (up or down)
 #define PANICSTICK_MOVEMENT 250 // 80 if althold on and throttle commanded to move by a gross amount, set PANIC
 //#define MINSTICK_MOVEMENT 32 // any movement less than this doesn't not trigger a rest of the holdaltitude
-//#define TEMPERATURE 0
-//#define PRESSURE 1
+#define TEMPERATURE 0
+#define PRESSURE 1
 int throttleAdjust = 0;
-//#ifndef AeroQuad_v18
+
 int minThrottleAdjust = -50;
 int maxThrottleAdjust = 50;
 float holdAltitude = 0.0;
@@ -188,7 +196,6 @@ int holdThrottle = 1000;
 float zDampening = 0.0;
 byte storeAltitude = OFF;
 byte altitudeHold = OFF;
-//#endif
 
 // Receiver variables
 #define TIMEOUT 25000
@@ -223,7 +230,7 @@ byte tlmType = 0;
 byte armed = OFF;
 byte safetyCheck = OFF;
 byte update = 0;
-
+HardwareSerial *binaryPort;
 
 /**************************************************************/
 /******************* Loop timing parameters *******************/
@@ -233,38 +240,32 @@ byte update = 0;
 #define ALTITUDELOOPTIME 50000   // 50ms x 2, 10Hz (alternates between temperature and pressure measurements)
 #define BATTERYLOOPTIME 100000   // 100ms, 10Hz
 #define CAMERALOOPTIME 20000     // 20ms, 50Hz
-#define FASTTELEMETRYTIME 10000  // 10ms, 100Hz
+#define FASTTELEMETRYTIME 15000  // 15ms, 67Hz
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
-
-#ifdef MAVLINK
-  #define RECEIVELOOPTIME 10000 // 100Hz
-  #define HEARTBEATLOOPTIME 1000000 // 1Hz
-  #define RAWDATALOOPTIME 100000 // 10Hz
-  #define SYSTEMSTATUSLOOPTIME 100000 // 10Hz
-  #define ATTITUDELOOPTIME 100000 // 10Hz
-#endif
 
 float G_Dt = 0.002;
 // Offset starting times so that events don't happen at the same time
+// main loop times
 unsigned long previousTime = 0;
 unsigned long currentTime = 0;
 unsigned long deltaTime = 0;
-unsigned long receiverTime = 0;
-unsigned long compassTime = 5000;
-unsigned long altitudeTime = 10000;
-unsigned long batteryTime = 15000;
-unsigned long autoZeroGyroTime = 0;
+// sub loop times
+unsigned long oneHZpreviousTime;
+unsigned long tenHZpreviousTime;
+unsigned long twentyFiveHZpreviousTime;
+unsigned long fiftyHZpreviousTime;
+unsigned long hundredHZpreviousTime;
+// old times.
+//unsigned long receiverTime = 0;
+//unsigned long compassTime = 5000;
+//unsigned long altitudeTime = 10000;
+//unsigned long batteryTime = 15000;
+//unsigned long autoZeroGyroTime = 0;
+#ifdef CameraControl
 unsigned long cameraTime = 10000;
-unsigned long fastTelemetryTime = 0;
-unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
-
-#ifdef MAVLINK
-  unsigned long receiveTime = 0;
-  unsigned long heartbeatTime = 0;
-  unsigned long rawDataTime = 50000;
-  unsigned long systemStatusTime = 10000;
-  unsigned long attitudeTime = 10000;
 #endif
+unsigned long fastTelemetryTime = 0;
+//unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
 
 // jihlein: wireless telemetry defines
 /**************************************************************/
@@ -302,17 +303,11 @@ byte receiverLoop = ON;
 byte telemetryLoop = ON;
 byte sensorLoop = ON;
 byte controlLoop = ON;
+#ifdef CameraControl
 byte cameraLoop = ON; // Note: stabilization camera software is still under development, moved to Arduino Mega
+#endif
 byte fastTransfer = OFF; // Used for troubleshooting
 byte testSignal = LOW;
-
-#ifdef MAVLINK
-  byte receiveLoop = ON;
-  byte heartbeatLoop = ON;
-  byte rawDataLoop = OFF;
-  byte systemStatusLoop = ON;
-  byte attitudeLoop = ON;
-#endif
 
 // **************************************************************
 // *************************** EEPROM ***************************
@@ -384,30 +379,13 @@ void readSensors(void); // defined in Sensors.pde
 //void calibrateESC(void); // defined in FlightControl.pde
 void processFlightControlXMode(void); // defined in FlightControl.pde
 void processFlightControlPlusMode(void); // defined in FlightControl.pde
-void processArdupirateSuperStableMode(void);  // defined in FlightControl.pde
-void processAeroQuadStableMode(void);  // defined in FlightControl.pde
-void processAttitudeMode(void); // defined in FlightControl.pde
 void readSerialCommand(void);  //defined in SerialCom.pde
 void sendSerialTelemetry(void); // defined in SerialCom.pde
-#ifdef MAVLINK
-  void readSerialMavLink(void);
-  void sendSerialHeartbeat(void); // defined in MavLink.pde
-  void sendSerialBoot(void);
-  void sendSerialSysStatus(void);
-  void sendSerialRawIMU(void);
-  void sendSerialAttitude(void);
-  void sendSerialAltitude(void);
-  void sendSerialRcRaw(void);
-  void sendSerialRcScaled(void);
-  void sendSerialRawPressure(void);
-  void sendSerialPID(int , int8_t[], int8_t[], int8_t[], int, int);
-  void sendSerialParamValue(int8_t[], float, int, int);
-  void sendSerialHudData(void);
-  void sendSerialGpsPostion(void);
-#endif
 void printInt(int data); // defined in SerialCom.pde
 float readFloatSerial(void); // defined in SerialCom.pde
 void sendBinaryFloat(float); // defined in SerialCom.pde
+void sendBinaryuslong(unsigned long); // defined in SerialCom.pde
+void fastTelemetry(void); // defined in SerialCom.pde
 void comma(void); // defined in SerialCom.pde
 
 #if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
