@@ -27,8 +27,8 @@
 #define VERSION 2.4
 
 //#define BAUD 115200
-#define BAUD 111111 // use this to be compatible with USB and XBee connections
-//#define BAUD 57600
+//#define BAUD 111111 // use this to be compatible with USB and XBee connections
+#define BAUD 57600
 #define LEDPIN 13
 #define ON 1
 #define OFF 0
@@ -243,6 +243,14 @@ HardwareSerial *binaryPort;
 #define FASTTELEMETRYTIME 15000  // 15ms, 67Hz
 #define TELEMETRYLOOPTIME 100000 // 100ms, 10Hz for slower computers/cables (more rough Configurator values)
 
+#ifdef MAVLINK
+  #define RECEIVELOOPTIME 10000 // 100Hz
+  #define HEARTBEATLOOPTIME 1000000 // 1Hz
+  #define RAWDATALOOPTIME 100000 // 10Hz
+  #define SYSTEMSTATUSLOOPTIME 100000 // 10Hz
+  #define ATTITUDELOOPTIME 100000 // 10Hz
+#endif
+
 float G_Dt = 0.002;
 // Offset starting times so that events don't happen at the same time
 // main loop times
@@ -265,6 +273,7 @@ unsigned long hundredHZpreviousTime;
 unsigned long cameraTime = 10000;
 #endif
 unsigned long fastTelemetryTime = 0;
+
 //unsigned long telemetryTime = 50000; // make telemetry output 50ms offset from receiver check
 
 // jihlein: wireless telemetry defines
@@ -387,7 +396,22 @@ void sendBinaryFloat(float); // defined in SerialCom.pde
 void sendBinaryuslong(unsigned long); // defined in SerialCom.pde
 void fastTelemetry(void); // defined in SerialCom.pde
 void comma(void); // defined in SerialCom.pde
-
+#ifdef MAVLINK
+  void readSerialMavLink(void);
+  void sendSerialHeartbeat(void); // defined in MavLink.pde
+  void sendSerialBoot(void);
+  void sendSerialSysStatus(void);
+  void sendSerialRawIMU(void);
+  void sendSerialAttitude(void);
+  void sendSerialAltitude(void);
+  void sendSerialRcRaw(void);
+  void sendSerialRcScaled(void);
+  void sendSerialRawPressure(void);
+  void sendSerialPID(int , int8_t[], int8_t[], int8_t[], int, int);
+  void sendSerialParamValue(int8_t[], float, int, int);
+  void sendSerialHudData(void);
+  void sendSerialGpsPostion(void);
+#endif
 #if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
 float findMode(float *data, int arraySize); // defined in Sensors.pde
 #else

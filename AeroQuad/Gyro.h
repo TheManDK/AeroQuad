@@ -236,7 +236,7 @@ public:
         gyroADC[axis] = ((Wire.receive() << 8) | Wire.receive()) - gyroZero[axis];
       else
         gyroADC[axis] = gyroZero[axis] - ((Wire.receive() << 8) | Wire.receive());
-      gyroData[axis] = filterSmooth((float)gyroADC[axis] * gyroScaleFactor, gyroData[axis], smoothFactor);
+      gyroData[axis] = AQMath::filterSmooth((float)gyroADC[axis] * gyroScaleFactor, gyroData[axis], smoothFactor);
     }
 
     //calculateHeading();
@@ -275,7 +275,7 @@ public:
         findZero[i] = readWordI2C(gyroAddress);
         delay(10);
       }
-      gyroZero[calAxis] = findMedian(findZero, FINDZERO);
+      gyroZero[calAxis] = AQMath::findMedian(findZero, FINDZERO);
     }
   }
 };

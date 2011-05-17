@@ -246,7 +246,7 @@ public:
       else
         accelADC[axis] = accelZero[axis] - ((Wire.receive()|(Wire.receive() << 8)) >> 2);
       //accelData[axis] = computeFirstOrder(accelADC[axis] * accelScaleFactor, &firstOrder[axis]);
-      accelData[axis] = filterSmooth(accelADC[axis] * accelScaleFactor, accelData[axis], smoothFactor);
+      accelData[axis] = AQMath::filterSmooth(accelADC[axis] * accelScaleFactor, accelData[axis], smoothFactor);
     }
   }
 
@@ -268,7 +268,7 @@ public:
         findZero[i] = readReverseWordI2C(accelAddress) >> 2; // last two bits are not part of measurement
         delay(10);
       }
-      accelZero[calAxis] = findMedian(findZero, FINDZERO);
+      accelZero[calAxis] = AQMath::findMedian(findZero, FINDZERO);
     }
 
     // replace with estimated Z axis 0g value

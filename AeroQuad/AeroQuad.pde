@@ -60,7 +60,8 @@
 #define HeadingMagHold // Enables HMC5843 Magnetometer, gets automatically selected if CHR6DM is defined
 #define AltitudeHold // Enables BMP085 Barometer (experimental, use at your own risk)
 #define BattMonitor //define your personal specs in BatteryMonitor.h! Full documentation with schematic there
-
+#define UseGPS
+#define UseLED
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // You must define *only* one of the following 2 flightAngle calculations
 // if you only want DCM, then don't define either of the below
@@ -83,6 +84,13 @@
 // Please note that you will need to have battery connected to power on servos with v2.0 shield
 // *******************************************************************************************************************************
 //#define CameraControl
+
+#define MAVLINK
+
+#define MAV_SYSTEM_ID 100
+#define MAV_COMPONENT_ID MAV_COMP_ID_IMU
+
+#define TARGET_LOOPTIME 500
 
 /****************************************************************************
  ********************* End of User Definition Section ***********************
@@ -247,9 +255,22 @@
     #include "Compass.h"
     Magnetometer_HMC5843 compass;
   #endif
+  #ifdef UseLED
+    #include <ProgramableLeds.h>
+    ProgramableLeds tmpLEDs;
+    LedProvider *leds = &tmpLEDs;
+  #endif
   #ifdef AltitudeHold
-    #include "Altitude.h"
-    Altitude_AeroQuad_v2 altitude;
+    #include <Sonar.h>
+    Sonar tmpAltitude;
+    
+    //#include <BMP085.h>
+    //BMP085 tmpAltitude;
+    
+    //#include <CombinedAltitude.h>
+    //CombinedAltitude tmpAltitude;
+    
+    AltitudeProvider *altitude = &tmpAltitude;
   #endif
   #ifdef BattMonitor
     #include "BatteryMonitor.h"
@@ -258,6 +279,11 @@
   #ifdef CameraControl
     #include "Camera.h"
     Camera_AeroQuad camera;
+  #endif
+  #ifdef UseGPS
+    #include <UP501.h>
+    UP501 tmpGps;
+    GPS *gps = &tmpGps;
   #endif
 #endif
 
@@ -393,6 +419,7 @@
 // ************************************************************
 void setup() {
   Serial.begin(BAUD);
+  Serial3.begin(BAUD);
   pinMode(LEDPIN, OUTPUT);
   digitalWrite(LEDPIN, LOW);
 
@@ -447,7 +474,9 @@ void setup() {
     // http://aeroquad.com/showthread.php?991-AeroQuad-Flight-Software-v2.0&p=11262&viewfull=1#post11262
     TWBR = 12;
   #endif
-
+  #ifdef MAVLINK
+    sendSerialBoot();
+  #endif
   // Read user values from EEPROM
   readEEPROM(); // defined in DataStorage.h
   
@@ -486,9 +515,14 @@ void setup() {
 
   // Optional Sensors
   #ifdef AltitudeHold
-    altitude.initialize();
+    altitude->initialize();
   #endif
   
+  #ifdef UseGPS
+    gps->initialize();
+  #endif
+
+
   // Battery Monitor
   #ifdef BattMonitor
     batteryMonitor.initialize();
@@ -644,7 +678,11 @@ void loop () {
           fastTelemetry();
         }
       #endif      
-      
+      #ifdef MAVLINK
+        //sendSerialHudData();
+        //sendSerialAttitude(); // Defined in MavLink.pde
+        //sendSerialGpsPostion();
+        #endif
       #ifdef DEBUG_LOOP
         digitalWrite(11, LOW);
       #endif
@@ -684,10 +722,13 @@ void loop () {
       
       if (sensorLoop == ON) {
         #if defined(AltitudeHold)
-          altitude.measure(); // defined in altitude.h
+          altitude->measure(); // defined in altitude.h
         #endif
       }
-      
+      #ifdef MAVLINK
+        readSerialCommand();
+        sendSerialTelemetry();
+      #endif
       #ifdef DEBUG_LOOP
         digitalWrite(9, LOW);
       #endif
@@ -713,16 +754,25 @@ void loop () {
         #endif
       }
       // Listen for configuration commands and reports telemetry
+      #ifndef MAVLINK
       if (telemetryLoop == ON) {
         readSerialCommand(); // defined in SerialCom.pde
         sendSerialTelemetry(); // defined in SerialCom.pde
       }
+      #endif
       
       #ifdef DEBUG_LOOP
         digitalWrite(8, LOW);
       #endif
     }
+    
+    if (frameCounter %  20 == 0) {  //   5 Hz tasks
+      #ifdef MAVLINK
+        //sendSerialHeartbeat();
+        //sendSerialSysStatus();
+      #endif
 
+    }
     previousTime = currentTime;
   }
   if (frameCounter >= 100) 

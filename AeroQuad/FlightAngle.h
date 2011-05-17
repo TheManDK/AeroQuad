@@ -110,8 +110,8 @@ void matrixUpdate(float p, float q, float r)
   rateGyroVector[PITCH] = q;
   rateGyroVector[YAW]   = r;
   
-  vectorSubtract(3, &omega[ROLL], &rateGyroVector[ROLL], &omegaI[ROLL]);
-  vectorSubtract(3, &correctedRateVector[ROLL], &omega[ROLL], &omegaP[ROLL]); 
+  AQMath::vectorSubtract(3, &omega[ROLL], &rateGyroVector[ROLL], &omegaI[ROLL]);
+  AQMath::vectorSubtract(3, &correctedRateVector[ROLL], &omega[ROLL], &omegaP[ROLL]); 
   
   //Accel_adjust();//adjusting centrifugal acceleration. // Not used for quadcopter
   
@@ -125,8 +125,8 @@ void matrixUpdate(float p, float q, float r)
   updateMatrix[7] =  G_Dt * correctedRateVector[ROLL];   //  p
   updateMatrix[8] =  0; 
 
-  matrixMultiply(3, 3, 3, temporaryMatrix, dcmMatrix, updateMatrix); 
-  matrixAdd(3, 3, dcmMatrix, dcmMatrix, temporaryMatrix);
+  AQMath::matrixMultiply(3, 3, 3, temporaryMatrix, dcmMatrix, updateMatrix); 
+  AQMath::matrixAdd(3, 3, dcmMatrix, dcmMatrix, temporaryMatrix);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -139,18 +139,18 @@ void normalize(void)
   float temporary[9];
   float renorm=0;
   
-  error= -vectorDotProduct(3, &dcmMatrix[0], &dcmMatrix[3]) * 0.5;         // eq.18
+  error= -AQMath::vectorDotProduct(3, &dcmMatrix[0], &dcmMatrix[3]) * 0.5;         // eq.18
 
-  vectorScale(3, &temporary[0], &dcmMatrix[3], error);                     // eq.19
-  vectorScale(3, &temporary[3], &dcmMatrix[0], error);                     // eq.19
+  AQMath::vectorScale(3, &temporary[0], &dcmMatrix[3], error);                     // eq.19
+  AQMath::vectorScale(3, &temporary[3], &dcmMatrix[0], error);                     // eq.19
   
-  vectorAdd(6, &temporary[0], &temporary[0], &dcmMatrix[0]);               // eq.19
+  AQMath::vectorAdd(6, &temporary[0], &temporary[0], &dcmMatrix[0]);               // eq.19
   
-  vectorCrossProduct(&temporary[6],&temporary[0],&temporary[3]);           // eq.20
+  AQMath::vectorCrossProduct(&temporary[6],&temporary[0],&temporary[3]);           // eq.20
   
   for(byte v=0; v<9; v+=3) {
-    renorm = 0.5 *(3 - vectorDotProduct(3, &temporary[v],&temporary[v]));  // eq.21
-    vectorScale(3, &dcmMatrix[v], &temporary[v], renorm);
+    renorm = 0.5 *(3 - AQMath::vectorDotProduct(3, &temporary[v],&temporary[v]));  // eq.21
+    AQMath::vectorScale(3, &dcmMatrix[v], &temporary[v], renorm);
   }
 }
 
@@ -189,23 +189,23 @@ void driftCorrection(float ax, float ay, float az, float oneG, float magX, float
   // Weight for accelerometer info (<0.5G = 0.0, 1G = 1.0 , >1.5G = 0.0)
   accelWeight = constrain(1 - 2 * abs(1 - accelMagnitude), 0, 1);
   
-  vectorCrossProduct(&errorRollPitch[0], &accelVector[0], &dcmMatrix[6]);
-  vectorScale(3, &omegaP[0], &errorRollPitch[0], kpRollPitch * accelWeight);
+  AQMath::vectorCrossProduct(&errorRollPitch[0], &accelVector[0], &dcmMatrix[6]);
+  AQMath::vectorScale(3, &omegaP[0], &errorRollPitch[0], kpRollPitch * accelWeight);
   
-  vectorScale(3, &scaledOmegaI[0], &errorRollPitch[0], kiRollPitch * accelWeight);
-  vectorAdd(3, omegaI, omegaI, scaledOmegaI);
+  AQMath::vectorScale(3, &scaledOmegaI[0], &errorRollPitch[0], kiRollPitch * accelWeight);
+  AQMath::vectorAdd(3, omegaI, omegaI, scaledOmegaI);
   
   //  Yaw Compensation
   
   #ifdef HeadingMagHold
     errorCourse = (dcmMatrix[0] * magY) - (dcmMatrix[3] * magX);
-    vectorScale(3, errorYaw, &dcmMatrix[6], errorCourse);
+    AQMath::vectorScale(3, errorYaw, &dcmMatrix[6], errorCourse);
   
-    vectorScale(3, &scaledOmegaP[0], &errorYaw[0], kpYaw);
-    vectorAdd(3, omegaP, omegaP, scaledOmegaP);
+    AQMath::vectorScale(3, &scaledOmegaP[0], &errorYaw[0], kpYaw);
+    AQMath::vectorAdd(3, omegaP, omegaP, scaledOmegaP);
   
-    vectorScale(3, &scaledOmegaI[0] ,&errorYaw[0], kiYaw);
-    vectorAdd(3, omegaI, omegaI, scaledOmegaI);
+    AQMath::vectorScale(3, &scaledOmegaI[0] ,&errorYaw[0], kiYaw);
+    AQMath::vectorAdd(3, omegaI, omegaI, scaledOmegaI);
   #else
     omegaP[YAW] = 0.0;
     omegaI[YAW] = 0.0;
@@ -249,9 +249,9 @@ void earthAxisAccels(float ax, float ay, float az, float oneG)
   accelVector[YAXIS] = ay;
   accelVector[ZAXIS] = az;
   
-  earthAccel[XAXIS] = vectorDotProduct(3, &dcmMatrix[0], &accelVector[0]);
-  earthAccel[YAXIS] = vectorDotProduct(3, &dcmMatrix[3], &accelVector[0]);
-  earthAccel[ZAXIS] = vectorDotProduct(3, &dcmMatrix[6], &accelVector[0]) + oneG;
+  earthAccel[XAXIS] = AQMath::vectorDotProduct(3, &dcmMatrix[0], &accelVector[0]);
+  earthAccel[YAXIS] = AQMath::vectorDotProduct(3, &dcmMatrix[3], &accelVector[0]);
+  earthAccel[ZAXIS] = AQMath::vectorDotProduct(3, &dcmMatrix[6], &accelVector[0]) + oneG;
 } 
   
 public:
