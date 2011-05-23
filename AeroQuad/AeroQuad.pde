@@ -262,11 +262,11 @@
     LedProvider *leds = &tmpLEDs;
   #endif
   #ifdef AltitudeHold
-    #include <Sonar.h>
-    Sonar tmpAltitude;
+    //#include <Sonar.h>
+    //Sonar tmpAltitude;
     
-    //#include <BMP085.h>
-    //BMP085 tmpAltitude;
+    #include <BMP085.h>
+    BMP085 tmpAltitude;
     
     //#include <CombinedAltitude.h>
     //CombinedAltitude tmpAltitude;
@@ -673,7 +673,7 @@ void loop () {
         processFlightControl();
       } 
 
-      #ifdef BinaryWrite
+      #if defined BinaryWrite && !defined MAVLINK
         if (fastTransfer == ON) {
           // write out fastTelemetry to Configurator or openLog
           fastTelemetry();
