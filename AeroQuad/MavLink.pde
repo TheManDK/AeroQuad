@@ -162,9 +162,9 @@ void sendSerialHeartbeat() {
 
 void sendSerialRawIMU() {
   
-  mavlink_msg_raw_imu_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, accel.getRaw(XAXIS), accel.getRaw(YAXIS), accel.getRaw(ZAXIS), gyro.getRaw(XAXIS), gyro.getRaw(YAXIS), gyro.getRaw(ZAXIS), compass.getRawData(XAXIS), compass.getRawData(YAXIS), compass.getRawData(ZAXIS));
-  len = mavlink_msg_to_send_buffer(buf, &msg);
-  PORT.write(buf, len);
+  //mavlink_msg_raw_imu_pack(MAV_SYSTEM_ID, MAV_COMPONENT_ID, &msg, 0, accel->getRaw(XAXIS), accel->getRaw(YAXIS), accel->getRaw(ZAXIS), gyro.getRaw(XAXIS), gyro.getRaw(YAXIS), gyro.getRaw(ZAXIS), compass.getRawData(XAXIS), compass.getRawData(YAXIS), compass.getRawData(ZAXIS));
+  //len = mavlink_msg_to_send_buffer(buf, &msg);
+  //PORT.write(buf, len);
 }
 
 void sendSerialAttitude() {

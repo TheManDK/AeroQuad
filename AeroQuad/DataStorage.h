@@ -128,9 +128,9 @@ void initializeEEPROM(void) {
   levelLimit = 500.0;
   levelOff = 150.0;
   gyro.setSmoothFactor(1.0);
-  accel.setSmoothFactor(1.0);
+  accel->setSmoothFactor(1.0);
   // AKA - old setOneG not in SI - accel.setOneG(500);
-  accel.setOneG(9.80665); // AKA set one G to 9.8 m/s^2
+  accel->setOneG(9.80665); // AKA set one G to 9.8 m/s^2
   timeConstant = 7.0;
   for (byte channel = ROLL; channel < LASTCHANNEL; channel++) {
     receiver.setTransmitterSlope(channel, 1.0);
@@ -204,7 +204,7 @@ void readEEPROM(void) {
   flightMode = readFloat(FLIGHTMODE_ADR);
   headingHoldConfig = readFloat(HEADINGHOLD_ADR);
   minAcro = readFloat(MINACRO_ADR);
-  accel.setOneG(readFloat(ACCEL1G_ADR));
+  accel->setOneG(readFloat(ACCEL1G_ADR));
   
   /*#ifdef Camera
   mCameraPitch = readFloat(MCAMERAPITCH_ADR);
@@ -253,7 +253,7 @@ void writeEEPROM(void){
   writeFloat(levelOff, LEVELOFF_ADR);
   writeFloat(receiver.getXmitFactor(), XMITFACTOR_ADR);
   writeFloat(gyro.getSmoothFactor(), GYROSMOOTH_ADR);
-  writeFloat(accel.getSmoothFactor(), ACCSMOOTH_ADR);
+  writeFloat(accel->getSmoothFactor(), ACCSMOOTH_ADR);
   writeFloat(timeConstant, FILTERTERM_ADR);
 
   for(byte channel = ROLL; channel < LASTCHANNEL; channel++) {
@@ -268,7 +268,7 @@ void writeEEPROM(void){
   writeFloat(flightMode, FLIGHTMODE_ADR);
   writeFloat(headingHoldConfig, HEADINGHOLD_ADR);
   writeFloat(minAcro, MINACRO_ADR);
-  writeFloat(accel.getOneG(), ACCEL1G_ADR);
+  writeFloat(accel->getOneG(), ACCEL1G_ADR);
     
   /*#ifdef Camera
   writeFloat(mCameraPitch, MCAMERAPITCH_ADR);

@@ -111,7 +111,6 @@
 #include "AQMath.h"
 #include "Receiver.h"
 #include "DataAcquisition.h"
-#include "Accel.h"
 #include "Gyro.h"
 #include "Motors.h"
 
@@ -240,7 +239,9 @@
   Receiver_AeroQuadMega receiver;
   Motors_PWMtimer motors;
   //Motors_AeroQuadI2C motors; // Use for I2C based ESC's
-  Accel_AeroQuadMega_v2 accel;
+  #include <Accelerometer_BMA180.h>
+  Accelerometer_BMA180 tempAccel;  
+  Accelerometer *accel = &tempAccel;
   Gyro_AeroQuadMega_v2 gyro;
   #include "FlightAngle.h"
   #ifdef FlightAngleARG
@@ -490,7 +491,7 @@ void setup() {
   // If sensors have a common initialization routine
   // insert it into the gyro class because it executes first
   gyro.initialize(); // defined in Gyro.h
-  accel.initialize(); // defined in Accel.h
+  accel->initialize(); // defined in Accel.h
   
   // Calibrate sensors
   gyro.autoZero(); // defined in Gyro.h
@@ -603,7 +604,7 @@ void loop () {
       if (sensorLoop == ON) {
         // measure critical sensors
         gyro.measure();
-        accel.measure();
+        accel->measure();
         
         // ****************** Calculate Absolute Angle *****************
         #if defined HeadingMagHold && defined FlightAngleMARG
@@ -646,10 +647,10 @@ void loop () {
           flightAngle->calculate(gyro.getData(ROLL),                       \
                                  gyro.getData(PITCH),                      \
                                  gyro.getData(YAW),                        \
-                                 accel.getData(XAXIS),                     \
-                                 accel.getData(YAXIS),                     \
-                                 accel.getData(ZAXIS),                     \
-                                 accel.getOneG(),                          \
+                                 accel->getMeterPerSec(XAXIS),                     \
+                                 accel->getMeterPerSec(YAXIS),                     \
+                                 accel->getMeterPerSec(ZAXIS),                     \
+                                 accel->getOneG(),                          \
                                  compass.getHdgXY(XAXIS),                  \
                                  compass.getHdgXY(YAXIS));
         #endif

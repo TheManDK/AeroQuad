@@ -85,7 +85,7 @@ void readSerialCommand() {
       break;
     case 'K': // Receive data filtering values
       gyro.setSmoothFactor(readFloatSerial());
-      accel.setSmoothFactor(readFloatSerial());
+      accel->setSmoothFactor(readFloatSerial());
       timeConstant = readFloatSerial();
       break;
     case 'M': // Receive transmitter smoothing values
@@ -107,7 +107,7 @@ void readSerialCommand() {
     case 'Y': // Initialize EEPROM with default values
       initializeEEPROM(); // defined in DataStorage.h
       gyro.calibrate();
-      accel.calibrate();
+      accel->calibrate();
       zeroIntegralError();
 #ifdef HeadingMagHold
       compass.initialize();
@@ -150,7 +150,7 @@ void readSerialCommand() {
       gyro.calibrate();
       break;
     case 'c': // calibrate accels
-      accel.calibrate();
+      accel->calibrate();
 #if defined(AeroQuadMega_CHR6DM) || defined(APM_OP_CHR6DM)
       flightAngle->calibrate();
       accel.setOneG(accel.getFlightData(ZAXIS));
@@ -284,7 +284,7 @@ void sendSerialTelemetry() {
     break;
   case 'L': // Send data filtering values
     PrintValueComma(gyro.getSmoothFactor());
-    PrintValueComma(accel.getSmoothFactor());
+    PrintValueComma(accel->getSmoothFactor());
     Serial.println(timeConstant);
     // comma();
     // Serial.println(flightMode, DEC);
@@ -312,7 +312,7 @@ void sendSerialTelemetry() {
       PrintValueComma(gyro.getData(axis));
     }
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
-      PrintValueComma(accel.getData(axis));
+      PrintValueComma(accel->getMeterPerSec(axis));
     }
     for (byte axis = ROLL; axis < YAW; axis++) {
       PrintValueComma(levelAdjust[axis]);
@@ -369,11 +369,14 @@ void sendSerialTelemetry() {
     }
     for (byte axis = ROLL; axis < LASTAXIS; axis++) {
       if (axis == ROLL)
-        PrintValueComma(accel.getFlightData(YAXIS));
+        // TODO PrintValueComma(accel->getFlightData(YAXIS));
+        ;
       else if (axis == PITCH)
-        PrintValueComma(accel.getFlightData(XAXIS));
+        // TODO PrintValueComma(accel.getFlightData(XAXIS));
+        ;
       else
-        PrintValueComma(accel.getFlightData(ZAXIS));
+        // TODO PrintValueComma(accel.getFlightData(ZAXIS));
+        ;
     }  
     Serial.print(armed, BIN);
     comma();

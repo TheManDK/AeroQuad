@@ -18,33 +18,33 @@
   along with this program. If not, see <http://www.gnu.org/licenses/>. 
 */
 
-#ifndef _AEROQUAD_ACCELEROMETER_H_
-#define _AEROQUAD_ACCELEROMETER_H_
+#ifndef _AEROQUAD_AXIS_DEFINES_H_
+#define _AEROQUAD_AXIS_DEFINES_H_
 
-#include <WProgram.h>
-#include <../AQ_Defines/Axis.h>
+// Basic axis definitions
+#define ROLL 0
+#define PITCH 1
+#define YAW 2
+#define THROTTLE 3
+#define MODE 4
+#define AUX 5
+#define AUX2 6
+#define AUX3 7
+#define XAXIS 0
+#define YAXIS 1
+#define ZAXIS 2
+#define LASTAXIS 3
+#define LEVELROLL 3
+#define LEVELPITCH 4
+#define LASTLEVELAXIS 5
+#define HEADING 5
+#define LEVELGYROROLL 6
+#define LEVELGYROPITCH 7
+#define ALTITUDE 8
+#define ZDAMPENING 9
 
-class Accelerometer {
-protected:
-  float accelScaleFactor;
-  float smoothFactor;
-  float oneG;
-  float meterPerSec[3];
-  float zero[3];
-  
-public:  
-  Accelerometer();
+// @todo Kenny, those following defines may have to go somewhere else
+#define FINDZERO 49
 
-  virtual void initialize() {}
-  virtual void calibrate() {}
-  virtual void measure() {}
-  
-  const float getSmoothFactor();
-  void setSmoothFactor(float value);
-  void setOneG(float oneG);
-  float getOneG();
-  float getMeterPerSec(byte axis);
-  float getZero(byte axis);
-  void setZero(byte axis, float zero);
-};
+
 #endif

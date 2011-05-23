@@ -24,7 +24,7 @@
 #include "pins_arduino.h"
 
 // Flight Software Version
-#define VERSION 2.4
+#define VERSION 2.5
 
 //#define BAUD 115200
 //#define BAUD 111111 // use this to be compatible with USB and XBee connections
