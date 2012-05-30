@@ -88,19 +88,34 @@ void readPilotCommands() {
       commandAllMotors(MINTHROTTLE);
     }
   }
+  #if defined(RateModeOnly) || defined(AttitudeModeOnly)
   
-  #ifdef RateModeOnly
-    flightMode = RATE_FLIGHT_MODE;
-  #else
-    // Check Mode switch for Acro or Stable
-    if (receiverCommand[MODE] > 1500) {
-      flightMode = ATTITUDE_FLIGHT_MODE;
-   }
-    else {
+    #ifdef AttitudeModeOnly
+  	flightMode = ATTITUDE_FLIGHT_MODE;
+  	if (receiverCommand[MODE] > 1500) {
+  		digitalWrite(43, HIGH);
+  		digitalWrite(44, HIGH);
+  		digitalWrite(45, HIGH);
+  	}
+  	else
+  	{
+  		digitalWrite(43, LOW);
+  		digitalWrite(44, LOW);
+  		digitalWrite(45, LOW);
+  	}
+    #endif
+    #ifdef RateModeOnly
       flightMode = RATE_FLIGHT_MODE;
-    }
-  #endif  
-  
+    #else
+      // Check Mode switch for Acro or Stable
+      if (receiverCommand[MODE] > 1500) {
+        flightMode = ATTITUDE_FLIGHT_MODE;
+     }
+      else {
+        flightMode = RATE_FLIGHT_MODE;
+      }
+    #endif  
+  #endif
   #if defined AltitudeHoldBaro || defined AltitudeHoldRangeFinder
    if (receiverCommand[AUX] < 1750) {
      if (altitudeHoldState != ALTPANIC ) {  // check for special condition with manditory override of Altitude hold

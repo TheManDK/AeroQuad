@@ -27,7 +27,7 @@
 *****************************************************************************/
 
 #include "UserConfiguration.h" // Edit this file first before uploading to the AeroQuad
-
+#define AttitudeModeOnly
 // Checks to make sure we have the right combinations defined
 #if defined(FlightAngleMARG) && !defined(HeadingMagHold)
   #undef FlightAngleMARG
